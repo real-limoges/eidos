@@ -68,11 +68,12 @@ fn spline_fit_animation_renders_to_mp4() {
         .x_range(0.0, 10.0)
         .y_range(-1.5, 1.5);
 
+    let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
     let visual_pts: Vec<(f64, f64)> = pts
         .iter()
         .map(|&(x, y)| {
-            let px = 80.0 + (x / 10.0) * 800.0;
-            let py = (60.0 + 500.0) - ((y + 1.5) / 3.0) * 500.0;
+            let px = axes.x + (x - x_min) / (x_max - x_min) * axes.width;
+            let py = (axes.y + axes.height) - (y - y_min) / (y_max - y_min) * axes.height;
             (px, py)
         })
         .collect();

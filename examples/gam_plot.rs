@@ -42,20 +42,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .stroke_width(2.5)?
         .animate_fit(0.5, 3.0, Easing::EaseInOut);
 
-    // Map fitted points to visual space ONCE outside the render closure (axes coords are fixed).
-    // Uses explicit range [0.0, 10.0] x and [-1.4, 1.4] y with Axes bounding box (80, 60, 1100, 580).
-    //
-    // The axes tick system may shift x_axis_min/max slightly from the explicit range, but for
-    // SplineFit we use the same explicit range as the Axes x_range/y_range to keep curves aligned.
-    fn map_x_ex(v: f64) -> f64 {
-        80.0 + (v - 0.0) / (10.0 - 0.0) * 1100.0
-    }
-    fn map_y_ex(v: f64) -> f64 {
-        (60.0 + 580.0) - (v - (-1.4)) / (1.4 - (-1.4)) * 580.0
-    }
+    // Map fitted points to visual space using Axes::plot_bounds() -- guaranteed to match
+    // to_primitives() coordinate mapping (tick-adjusted bounds, same formula).
+    let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
     let visual_pts: Vec<(f64, f64)> = fitted
         .iter()
-        .map(|&(x, y)| (map_x_ex(x), map_y_ex(y)))
+        .map(|&(x, y)| {
+            let px = axes.x + (x - x_min) / (x_max - x_min) * axes.width;
+            let py = (axes.y + axes.height) - (y - y_min) / (y_max - y_min) * axes.height;
+            (px, py)
+        })
         .collect();
 
     // --- Scene: 1280x720, 30fps, 4 seconds ---
