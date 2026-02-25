@@ -11,7 +11,6 @@ use crate::EidosError;
 ///
 /// Adds a black background rectangle as the first element.
 ///
-/// Primitive-to-SVG conversion stubs are here; full dispatch is completed in plan 01-05.
 /// Arrow defs (markers) are emitted first, before shape nodes, as required by the SVG spec
 /// (defs must precede references — research Pitfall 3).
 pub fn build_svg_document(
@@ -36,39 +35,28 @@ pub fn build_svg_document(
         .set("fill", "black");
     doc = doc.add(bg);
 
-    // Pass 1: collect SVG Definitions (Arrow markers must precede their references).
-    // TODO(01-05): implement Arrow defs extraction when Arrow struct is complete.
+    // Pass 1: collect all arrow defs and add them before any shape elements (Pitfall 3).
+    // SVG requires <defs> to appear before elements that reference them via url(#id).
     for primitive in primitives {
-        match primitive {
-            crate::primitives::Primitive::Arrow(_) => {
-                // TODO(01-05): add arrow marker Definitions node here
-            }
-            _ => {}
+        if let crate::primitives::Primitive::Arrow(arrow) = primitive {
+            let (defs, _line) = arrow.to_svg_parts();
+            doc = doc.add(defs);
         }
     }
 
-    // Pass 2: add shape nodes
+    // Pass 2: add all shape elements in order
     for primitive in primitives {
-        match primitive {
-            crate::primitives::Primitive::Circle(_circle) => {
-                // TODO(01-05): convert Circle to SVG circle element
+        doc = match primitive {
+            crate::primitives::Primitive::Circle(c) => doc.add(c.to_svg_element()),
+            crate::primitives::Primitive::Rect(r) => doc.add(r.to_svg_element()),
+            crate::primitives::Primitive::Line(l) => doc.add(l.to_svg_element()),
+            crate::primitives::Primitive::Arrow(a) => {
+                let (_defs, line) = a.to_svg_parts(); // defs already added in Pass 1
+                doc.add(line)
             }
-            crate::primitives::Primitive::Rect(_rect) => {
-                // TODO(01-05): convert Rect to SVG rect element
-            }
-            crate::primitives::Primitive::Line(_line) => {
-                // TODO(01-05): convert Line to SVG line element
-            }
-            crate::primitives::Primitive::Arrow(_arrow) => {
-                // TODO(01-05): convert Arrow to SVG line + marker-end element
-            }
-            crate::primitives::Primitive::Text(_text) => {
-                // TODO(01-05): convert Text to SVG text element
-            }
-            crate::primitives::Primitive::Bezier(_bezier) => {
-                // TODO(01-05): convert Bezier to SVG path element
-            }
-        }
+            crate::primitives::Primitive::Text(t) => doc.add(t.to_svg_element()),
+            crate::primitives::Primitive::Bezier(b) => doc.add(b.to_svg_element()),
+        };
     }
 
     doc.to_string()
