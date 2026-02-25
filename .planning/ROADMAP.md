@@ -43,7 +43,12 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
   2. User can configure the camera viewpoint via azimuth, elevation, and distance parameters
   3. `Camera::project_to_screen()` maps known world-space coordinates to correct pixel coordinates (unit-tested)
   4. Backface culling correctly identifies and discards faces not visible from the configured viewpoint
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [x] 05-01-PLAN.md — Camera struct with spherical coordinates and project_to_screen
+- [x] 05-02-PLAN.md — SurfacePlot data container with normalized world vertices
+- [x] 05-03-PLAN.md — Public API wiring (crate-root re-exports for Camera and SurfacePlot)
 
 ### Phase 6: Static 3D Surface Rendering
 **Goal**: Users can render a complete, visually correct 3D surface scene — wireframe or shaded — with labeled cartesian axes, to a single video frame
@@ -54,7 +59,12 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
   2. User can render a surface as a shaded mesh where face color varies with z-height via a configurable gradient
   3. User can add labeled 3D cartesian axes with projected tick marks to the surface plot
   4. A 30x30 mesh renders to an MP4 frame within an acceptable time budget (per-frame benchmark passes)
-**Plans**: TBD
+**Plans**: 3 plans
+
+Plans:
+- [ ] 06-01-PLAN.md — Colormap module, Camera::eye_position(), RenderMode enum, SurfacePlot data extents and builder methods
+- [ ] 06-02-PLAN.md — SurfacePlot::to_primitives() painter's algorithm (SURF-02 wireframe + SURF-03 shaded) and SceneBuilder::add_surface()
+- [ ] 06-03-PLAN.md — 3D axis rendering integrated into to_primitives() (SURF-04), axis edge selection, tick marks and labels
 
 ### Phase 7: Surface and Camera Animation
 **Goal**: Users can produce an animated video where the surface morphs from flat to its fitted shape, and the camera orbits around the surface
@@ -88,7 +98,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 | 4. GAM Visualization | v1.0 | 3/3 | Complete | 2026-02-25 |
 | 4.5. GAM Visualization Completion | v1.0 | 1/1 | Complete | 2026-02-25 |
 | 4.6. v1.0 API Ergonomics Cleanup | v1.0 | 1/1 | Complete | 2026-02-25 |
-| 5. Camera and Projection Foundation | 3/3 | Complete   | 2026-02-25 | - |
-| 6. Static 3D Surface Rendering | v1.1 | 0/? | Not started | - |
+| 5. Camera and Projection Foundation | v1.1 | 3/3 | Complete | 2026-02-25 |
+| 6. Static 3D Surface Rendering | v1.1 | 0/3 | Not started | - |
 | 7. Surface and Camera Animation | v1.1 | 0/? | Not started | - |
 | 8. Scatter Points | v1.1 | 0/? | Not started | - |
