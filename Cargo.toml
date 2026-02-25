@@ -21,3 +21,7 @@ path = "examples/animated_scene.rs"
 [[example]]
 name = "data_plot"
 path = "examples/data_plot.rs"
+
+[[example]]
+name = "gam_plot"
+path = "examples/gam_plot.rs"
