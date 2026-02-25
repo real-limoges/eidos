@@ -1,6 +1,7 @@
 // src/lib.rs
 pub mod animation;
 pub mod color;
+pub mod dataviz;
 pub mod error;
 pub mod primitives;
 pub mod scene;
