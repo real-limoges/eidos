@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: 3D Surface Visualization
 status: in_progress
-last_updated: "2026-02-25T21:05:13Z"
+last_updated: "2026-02-25T21:08:21Z"
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 0
-  completed_plans: 2
+  completed_plans: 3
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 5 — Camera and Projection Foundation (Plan 02 complete)
+**Current focus:** Phase 5 — Camera and Projection Foundation (Plan 03 complete — Phase 5 done, SURF-01 satisfied)
 
 ## Current Position
 
 Phase: 5 of 8 (Camera and Projection Foundation)
-Plan: 2 complete (SurfacePlot data container done)
+Plan: 3 complete (public API wiring done — Camera and SurfacePlot at crate root)
 Status: In progress
-Last activity: 2026-02-25 — 05-02 complete — SurfacePlot with per-axis normalization, 7 tests passing
+Last activity: 2026-02-25 — 05-03 complete — Phase 5 fully wired, SURF-01 satisfied, 99 tests passing
 
-Progress: [██░░░░░░░░] ~20%
+Progress: [███░░░░░░░] ~30%
 
 ## Performance Metrics
 
@@ -42,12 +42,13 @@ Progress: [██░░░░░░░░] ~20%
 |-------|-------|----------|
 | 01–04.6 (v1.0) | 19 | ~3 min |
 
-**v1.1 velocity:** 2 plans completed.
+**v1.1 velocity:** 3 plans completed.
 
 | Phase | Plans | Avg/Plan |
 |-------|-------|----------|
 | 05-01 (camera.rs) | 1 | ~2 min |
 | 05-02 (surface_plot.rs) | 1 | ~2 min |
+| 05-03 (public API wiring) | 1 | ~1 min |
 
 *Updated after each plan completion*
 
@@ -77,6 +78,12 @@ Decisions from 05-02 execution:
 - [05-02]: Temporary pub mod surface_plot in dataviz/mod.rs — Plan 03 will add crate-root re-export
 - [05-02]: normalize() span < 1e-12 degenerate guard matches axes.rs convention
 
+Decisions from 05-03 execution:
+
+- [05-03]: Phase 5 types added alphabetically to existing pub use dataviz::{} line in lib.rs — consistent with v1.0 ergonomics
+- [05-03]: dataviz/mod.rs pub mod declarations ordered alphabetically (camera before confidence_band, surface_plot at end)
+- [05-03]: SURF-01 fully satisfied — use eidos::Camera and use eidos::SurfacePlot are valid import paths
+
 ### Pending Todos
 
 None yet.
@@ -89,5 +96,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 05-02-PLAN.md — SurfacePlot data container, per-axis normalization, 7 unit tests passing (76 total).
+Stopped at: Completed 05-03-PLAN.md — public API wiring, SURF-01 satisfied, 99 tests passing.
 Resume file: None
