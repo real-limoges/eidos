@@ -1,2 +1,5 @@
+pub mod axes;
 pub mod data_curve;
+
+pub use axes::{Axes, AxisRange};
 pub use data_curve::DataCurve;
