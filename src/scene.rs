@@ -21,6 +21,15 @@ impl SceneBuilder {
         self.primitives.push(p.into());
         self
     }
+
+    /// Decompose an Axes into its constituent primitives and add them all to the scene.
+    /// Equivalent to calling add() for each primitive in axes.to_primitives().
+    pub fn add_axes(&mut self, axes: &crate::dataviz::Axes) -> &mut Self {
+        for prim in axes.to_primitives() {
+            self.primitives.push(prim);
+        }
+        self
+    }
 }
 
 impl Scene {
