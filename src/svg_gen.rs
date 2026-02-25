@@ -103,6 +103,13 @@ pub fn rasterize_frame(
 ///
 /// stdin is explicitly dropped before wait() so ffmpeg receives EOF and finalizes the file.
 /// Forgetting to close stdin causes ffmpeg to block indefinitely waiting for more input.
+#[deprecated(
+    since = "0.1.0",
+    note = "Use `svg_gen::encode_to_mp4_animated` instead. \
+            This function encodes a single repeated frame and is superseded \
+            by the per-frame closure variant introduced in Phase 2."
+)]
+#[allow(dead_code)]
 pub fn encode_to_mp4(
     rgba_frame: &[u8],
     total_frames: u64,
