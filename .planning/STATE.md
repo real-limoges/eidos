@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: API Ergonomics Cleanup
 status: unknown
-last_updated: "2026-02-25T19:03:30.042Z"
+last_updated: "2026-02-25T19:31:43.447Z"
 progress:
   total_phases: 8
-  completed_phases: 7
-  total_plans: 18
-  completed_plans: 18
+  completed_phases: 8
+  total_plans: 19
+  completed_plans: 19
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 
 ## Current Position
 
-Phase: 4.5 (GAM Visualization Completion — COMPLETE)
-Plan: 1 of 1 in current phase (04.5-01 all 3 tasks complete)
+Phase: 4.6 (v1.0 API Ergonomics Cleanup — COMPLETE)
+Plan: 1 of 1 in current phase (04.6-01 all 3 tasks complete)
 Status: Complete
-Last activity: 2026-02-25 -- 04.5-01 complete: Axes::plot_bounds() added with 2 tests, gam_plot.rs and gam_viz.rs updated, gam_plot.mp4 human-verified. Phase 4 milestone closed (04-VERIFICATION.md: passed).
+Last activity: 2026-02-25 -- 04.6-01 complete: crate-root re-exports added for SceneBuilder, 7 primitives, 4 State types; encode_to_mp4 deleted; 03-03-SUMMARY.md corrected (12->11 integration tests). cargo build --all-targets: zero warnings.
 
-Progress: [████████████] 100% (17/17 plans)
+Progress: [████████████] 100% (19/19 plans)
 
 ## Performance Metrics
 
@@ -63,6 +63,7 @@ Progress: [████████████] 100% (17/17 plans)
 | Phase 04-gam-visualization P02 | 2 | 1 tasks | 3 files |
 | Phase 04-gam-visualization P03 | 7 | 2 tasks | 4 files |
 | Phase 04.5 P01 | 10 | 3 tasks | 4 files |
+| Phase 04.6-v1.0-api-ergonomics-cleanup P01 | 3 | 3 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -116,6 +117,9 @@ Recent decisions affecting current work:
 - [Phase 04-gam-visualization]: visual_pts mapped outside render closure — coordinate mapping is deterministic for fixed Axes ranges, avoiding redundant computation per frame
 - [Phase 04-gam-visualization]: Example uses scene.render() not render_static() — SplineFit requires per-frame t_secs for animation; integration test uses render_static() for static ConfidenceBand test
 - [Phase 04.5]: plot_bounds() accepted duplication with to_primitives() Steps 1-2 — research Option (a); avoids refactoring production rendering path
+- [Phase 04.6-v1.0-api-ergonomics-cleanup]: pub use scene:{Scene, SceneBuilder} replaces pub use scene::Scene — SceneBuilder is first-class public API at crate root
+- [Phase 04.6-v1.0-api-ergonomics-cleanup]: State types use explicit sub-path imports (primitives::circle::CircleState) not glob — primitives/mod.rs does not re-export them
+- [Phase 04.6-v1.0-api-ergonomics-cleanup]: encode_to_mp4 deleted entirely (not just deprecated) — zero callers confirmed before removal; doc comment block also removed
 
 ### Pending Todos
 
@@ -129,5 +133,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 04.5-01-PLAN.md — Phase 4.5 GAM Visualization Completion fully done.
+Stopped at: Completed 04.6-01-PLAN.md — Phase 4.6 v1.0 API ergonomics cleanup fully done.
 Resume file: None
