@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: API Ergonomics Cleanup
 status: unknown
-last_updated: "2026-02-25T19:31:43.447Z"
+last_updated: "2026-02-25T19:36:45.676Z"
 progress:
   total_phases: 8
   completed_phases: 8

@@ -1,367 +1,468 @@
-# Architecture Patterns
+# Architecture Research
 
-**Domain:** Manim-inspired declarative animation library (Rust, video output)
-**Researched:** 2026-02-24
+**Domain:** 3D Surface Rendering Integration into 2D SVG Animation Pipeline
+**Researched:** 2026-02-25
+**Confidence:** HIGH
 
-## Recommended Architecture
+## Standard Architecture
 
-Eidos should follow a **layered pipeline architecture** with five distinct components, mirroring Manim's proven layered design but adapted for Rust's ownership model and the SVG-to-rasterize-to-encode pipeline specified in PROJECT.md.
-
-```
-User Code (declarative scene! { } macro / builder API)
-       |
-       v
-  +------------------+
-  |   Scene Graph     |  <-- Owns tree of SceneObjects, tracks state transitions
-  +------------------+
-       |
-       v
-  +------------------+
-  |  Animation Engine |  <-- Resolves transitions, interpolates per-frame state
-  +------------------+
-       |
-       v
-  +------------------+
-  |   SVG Renderer    |  <-- Converts resolved scene state -> SVG document per frame
-  +------------------+
-       |
-       v
-  +------------------+
-  |   Rasterizer      |  <-- SVG -> pixel buffer (resvg/tiny-skia)
-  +------------------+
-       |
-       v
-  +------------------+
-  |   Video Encoder   |  <-- Pixel buffers -> MP4/GIF (ffmpeg CLI or wrapper)
-  +------------------+
-```
-
-### Component Boundaries
-
-| Component | Responsibility | Owns | Communicates With |
-|-----------|---------------|------|-------------------|
-| **Scene Graph** | Stores the declarative scene description: objects, their properties, and declared state transitions. Tree structure with parent-child grouping. | `SceneObject` tree, transition declarations | Animation Engine (reads transitions), User API (receives declarations) |
-| **Animation Engine** | Given a scene graph with transitions, produces per-frame resolved state. Handles timing, easing, interpolation. For each frame `t`, emits a "resolved scene" where every object has concrete property values. | Timeline, easing functions, interpolation logic | Scene Graph (reads), SVG Renderer (emits resolved state) |
-| **SVG Renderer** | Converts a resolved scene snapshot (all objects with concrete values) into an SVG document string. Each object type knows how to emit its SVG representation. | SVG generation logic, coordinate transforms | Animation Engine (receives resolved state), Rasterizer (emits SVG string) |
-| **Rasterizer** | Takes an SVG string, produces a pixel buffer (RGBA). Thin wrapper around resvg. | resvg/tiny-skia configuration | SVG Renderer (receives SVG), Video Encoder (emits pixel buffer) |
-| **Video Encoder** | Accepts a stream of pixel buffers, encodes them into MP4 or GIF. Wraps ffmpeg (CLI subprocess or FFI). | Encoding state, output file handle | Rasterizer (receives frames), Filesystem (writes output) |
-
-### Data Flow
+### System Overview
 
 ```
-1. User writes declarative scene description
-   scene! {
-     axes(x: 0..10, y: 0..1)
-     curve(data: spline_fit, color: blue)
-       .appear()                      // transition: fade in
-       .then(band(confidence: 0.95))  // transition: add confidence band
-       .then(label("GAM fit"))        // transition: add label
-   }
-
-2. Scene Graph Construction
-   - Macro/builder expands into SceneGraph struct
-   - Tree of SceneObjects with declared transitions
-   - Each transition = (trigger_order, target_state, duration, easing)
-
-3. Animation Engine Resolution (per frame)
-   - Total timeline computed from transition durations
-   - For frame at time t:
-     - Determine which transitions are active
-     - Compute alpha (0.0..1.0) for each active transition
-     - Apply easing function to alpha
-     - Interpolate object properties: color, opacity, position, path points
-   - Emit ResolvedScene: Vec<ResolvedObject> with concrete values
-
-4. SVG Generation
-   - Walk ResolvedScene
-   - Each ResolvedObject -> SVG element(s)
-   - Axes -> <line>, <text> elements
-   - Curves -> <path> with Bezier control points
-   - Bands -> <path> with fill-opacity
-   - Compose into single SVG document string
-
-5. Rasterization
-   - Parse SVG string with resvg (usvg for parsing, tiny-skia for rendering)
-   - Output: Vec<u8> RGBA pixel buffer at target resolution
-
-6. Encoding
-   - Stream pixel buffers to ffmpeg subprocess via stdin pipe
-   - ffmpeg encodes to H.264 MP4 or GIF
-   - Output: video file on disk
+┌─────────────────────────────────────────────────────────────────────┐
+│                        USER API LAYER                               │
+│  ┌──────────────┐  ┌───────────────┐  ┌──────────────────────────┐  │
+│  │  SurfacePlot │  │  Camera /     │  │  ScatterPlot3D           │  │
+│  │  (NEW)       │  │  CameraState  │  │  (NEW)                   │  │
+│  │              │  │  (NEW)        │  │                          │  │
+│  └──────┬───────┘  └──────┬────────┘  └────────────┬─────────────┘  │
+│         │                 │                        │               │
+├─────────┴─────────────────┴────────────────────────┴───────────────┤
+│                   PROJECTION LAYER (new, dataviz module)            │
+│  ┌───────────────────────────────────────────────────────────────┐  │
+│  │  camera.rs: project(point3d, camera) → (screen_x, screen_y)  │  │
+│  │             sort_faces_back_to_front(faces)                   │  │
+│  │             backface_cull(normal, view_dir) → bool            │  │
+│  └───────────────────────────┬───────────────────────────────────┘  │
+│                              │                                      │
+├──────────────────────────────┴─────────────────────────────────────┤
+│               EXISTING PRIMITIVES / SVG PATH LAYER (unchanged)      │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────────────┐   │
+│  │ Bezier   │  │  Line    │  │  Circle  │  │  Rect / Text     │   │
+│  │ (filled) │  │          │  │  (dots)  │  │                  │   │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────────────┘   │
+├─────────────────────────────────────────────────────────────────────┤
+│               EXISTING RENDERING PIPELINE (unchanged)               │
+│     SVG per frame → tiny-skia/resvg rasterize → ffmpeg MP4         │
+└─────────────────────────────────────────────────────────────────────┘
 ```
 
-## Patterns to Follow
+### Component Responsibilities
 
-### Pattern 1: Interpolatable Trait
+| Component | Responsibility | New vs Existing |
+|-----------|----------------|-----------------|
+| `SurfacePlot` | Holds 3D grid data, surface color config, fitting animation state | NEW — dataviz module |
+| `Camera` | Holds spherical viewpoint (azimuth, elevation, distance, target) + viewport dims | NEW — dataviz module |
+| `CameraState` | All-f64 CanTween struct mirroring Camera's spherical fields | NEW — animation compatible |
+| `ScatterPlot3D` | Holds `Vec<(f64,f64,f64)>` raw data points for scatter overlay | NEW — dataviz module |
+| `Projection3D` (functions in camera.rs) | Pure math: world → view → clip → screen; no SVG knowledge | NEW — inside camera.rs |
+| Face sorting | Sort mesh quads by Z-centroid; painter's algorithm | NEW — inside surface_plot.rs |
+| `Bezier` (filled) | Already supports `.fill(Color)` — used for shaded quad faces | EXISTING — no change needed |
+| `Circle` | Already exists — used for projected data point scatter dots | EXISTING — no change needed |
+| `SceneBuilder` | Gains `add_surface_plot()` convenience method | MODIFIED — adds one method |
+| `lib.rs` | Gains re-exports for Camera, CameraState, SurfacePlot, ScatterPlot3D | MODIFIED — additive only |
+| `dataviz/mod.rs` | Gains module declarations and re-exports for new types | MODIFIED — additive only |
+| `Primitive` enum | Unchanged — no new variants needed | EXISTING — no change |
+| `svg_gen.rs` | Unchanged — only ever receives existing Primitive types | EXISTING — no change |
+| `Tween<P>` | Unchanged — works as-is; `Tween<CameraState>` and `Tween<f64>` both used | EXISTING — no change |
 
-Every animatable property must implement a common interpolation trait. This is the core abstraction that makes the animation engine generic.
+## Recommended Project Structure
 
-**What:** A trait that defines how to blend between two values given an alpha (0.0 to 1.0).
-**When:** Any property that can change during animation.
+```
+src/
+├── primitives/            # unchanged
+│   ├── bezier.rs          # unchanged — filled Bezier already supports quads
+│   ├── circle.rs          # unchanged — used for scatter dots
+│   └── mod.rs             # unchanged
+├── animation/             # unchanged
+│   ├── tween.rs           # unchanged — CameraState derives CanTween same as CircleState
+│   └── easing.rs          # unchanged
+├── dataviz/
+│   ├── mod.rs             # MODIFIED: add re-exports for SurfacePlot, Camera, CameraState, ScatterPlot3D
+│   ├── axes.rs            # unchanged
+│   ├── data_curve.rs      # unchanged
+│   ├── confidence_band.rs # unchanged
+│   ├── spline_fit.rs      # unchanged — 2D SplineFit stays 2D
+│   ├── spline.rs          # unchanged
+│   ├── camera.rs          # NEW: Camera struct, CameraState (CanTween), projection math functions
+│   ├── surface_plot.rs    # NEW: SurfacePlot struct + to_primitives(&camera, t_secs)
+│   └── scatter_plot3d.rs  # NEW: ScatterPlot3D struct + to_primitives(&camera)
+├── scene.rs               # MODIFIED: add add_surface_plot() to SceneBuilder
+├── svg_gen.rs             # unchanged
+└── lib.rs                 # MODIFIED: add re-exports for new public types
+```
 
+### Structure Rationale
+
+- **camera.rs:** Camera struct and projection math are co-located because they are tightly coupled — every projection call needs camera parameters. Separating them would require passing large parameter bags.
+- **surface_plot.rs:** SurfacePlot owns its decomposition. It calls into camera.rs for projection, sorts faces internally, and returns `Vec<Primitive>`. This mirrors the Axes pattern exactly — high-level dataviz type that decomposes to primitives.
+- **scatter_plot3d.rs:** Separate file mirrors the DataCurve/ConfidenceBand pattern. Small composable dataviz types that do one thing each.
+- **No new rendering modules:** The SVG pipeline is untouched. 3D→2D projection is a data transformation inside the dataviz layer before `Vec<Primitive>` is handed downstream.
+
+## Architectural Patterns
+
+### Pattern 1: 3D→2D Projection as High-Level Primitive Decomposition
+
+**What:** `SurfacePlot::to_primitives(&camera, t_secs)` applies projection internally and returns `Vec<Primitive>` to the caller. The SVG renderer never sees 3D coordinates — it only receives Bezier, Circle, Line, etc. The 3D-to-2D transformation happens entirely within the dataviz layer.
+
+**When to use:** Always, for this codebase. This is the only approach consistent with the existing architecture where Axes, DataCurve, SplineFit all decompose to `Vec<Primitive>`.
+
+**Trade-offs:**
+- Pro: Zero changes to svg_gen.rs, rasterization, or ffmpeg pipeline
+- Pro: Follows the established decomposition contract (same as Axes::to_primitives)
+- Pro: Projection bugs are isolated in one place, not scattered in the renderer
+- Con: Cannot add SVG-level features like `<filter>` depth-of-field — not needed for this use case
+
+**Example:**
 ```rust
-pub trait Interpolatable: Clone {
-    fn interpolate(&self, target: &Self, alpha: f64) -> Self;
+// Inside scene render closure — mirrors how Axes is used today
+let camera = cam_tween.value_at(t_secs).to_camera();
+for p in surface_plot.to_primitives(&camera, t_secs) {
+    builder.add(p);
+}
+// Or via SceneBuilder convenience method:
+builder.add_surface_plot(&surface_plot, &camera, t_secs);
+```
+
+### Pattern 2: CameraState as CanTween Struct (Camera Animation)
+
+**What:** Camera animation follows the identical pattern as CircleState→Circle. A `CameraState` struct holds all camera parameters as f64 fields in spherical coordinates (azimuth_deg, elevation_deg, distance, target_x, target_y, target_z). It derives `CanTween`. A `to_camera()` method converts interpolated state back to a `Camera` with a Cartesian eye position.
+
+**When to use:** Any camera motion — orbit, zoom, pan — all driven by existing `Tween<CameraState>`.
+
+**Trade-offs:**
+- Pro: Reuses entire existing animation infrastructure — no new animation primitives
+- Pro: Works with all four existing Easing variants
+- Pro: Spherical interpolation (azimuth, elevation) is correct for orbit motion. Linear interpolation in degree-space is geometrically correct for smooth arcs.
+- Con: Azimuth interpolation across the 0°/360° boundary is wrong (e.g., 350°→10° goes the long way around). Document that users should keep arcs below 180°; can be fixed in v1.2 with angle normalization.
+- Con: Interpolating Cartesian eye position directly (the alternative) does not produce arc motion — it cuts through the interior of the orbit sphere.
+
+**Example:**
+```rust
+#[derive(Clone, CanTween)]
+pub struct CameraState {
+    pub azimuth_deg:   f64,  // horizontal orbit angle around target
+    pub elevation_deg: f64,  // vertical orbit angle (0=horizon, 90=top-down)
+    pub distance:      f64,  // distance from target
+    pub target_x:      f64,  // look-at point x
+    pub target_y:      f64,
+    pub target_z:      f64,
 }
 
-// Implementations for common types
-impl Interpolatable for f64 {
-    fn interpolate(&self, target: &Self, alpha: f64) -> Self {
-        self * (1.0 - alpha) + target * alpha
+impl CameraState {
+    pub fn to_camera(&self, viewport_w: u32, viewport_h: u32) -> Camera {
+        // Convert spherical (azimuth, elevation, distance) to Cartesian eye position
+        let eye_x = self.target_x + self.distance
+            * self.elevation_deg.to_radians().cos()
+            * self.azimuth_deg.to_radians().sin();
+        let eye_y = self.target_y + self.distance
+            * self.elevation_deg.to_radians().sin();
+        let eye_z = self.target_z + self.distance
+            * self.elevation_deg.to_radians().cos()
+            * self.azimuth_deg.to_radians().cos();
+        Camera { eye: (eye_x, eye_y, eye_z), target: (self.target_x, self.target_y, self.target_z),
+                 viewport_w, viewport_h, fov_deg: 45.0 }
     }
 }
 
-impl Interpolatable for Color {
-    fn interpolate(&self, target: &Self, alpha: f64) -> Self {
-        Color {
-            r: self.r.interpolate(&target.r, alpha),
-            g: self.g.interpolate(&target.g, alpha),
-            b: self.b.interpolate(&target.b, alpha),
-            a: self.a.interpolate(&target.a, alpha),
-        }
-    }
-}
-
-// For paths (curves): interpolate control points pairwise
-impl Interpolatable for BezierPath {
-    fn interpolate(&self, target: &Self, alpha: f64) -> Self {
-        // Requires same number of control points (resample if needed)
-        BezierPath {
-            points: self.points.iter().zip(&target.points)
-                .map(|(a, b)| a.interpolate(b, alpha))
-                .collect()
-        }
-    }
-}
+// Animation — identical to CircleState usage:
+let cam_tween: Tween<CameraState> = Tween {
+    start: CameraState { azimuth_deg: 30.0, elevation_deg: 30.0, distance: 5.0,
+                          target_x: 0.0, target_y: 0.0, target_z: 0.0 },
+    end:   CameraState { azimuth_deg: 150.0, ..start },
+    start_time: 1.0,
+    duration: 4.0,
+    easing: Easing::EaseInOut,
+};
 ```
 
-### Pattern 2: Transition as Data, Not Callbacks
+### Pattern 3: Painter's Algorithm for Depth-Sorted SVG Faces
 
-**What:** Transitions (animations) are plain data structs, not closures or trait objects. The animation engine interprets them.
-**When:** Always. This is fundamental to the declarative model.
+**What:** SurfacePlot produces mesh quads (one quad per grid cell). Each face is projected to screen coordinates and its Z-centroid is computed in view space. Faces are sorted back-to-front by Z-centroid (painter's algorithm). Back-facing quads are culled (dot product of face normal with view direction < 0). Sorted front-facing faces are emitted as filled `Bezier` quads. SVG document order provides occlusion — later-drawn elements paint over earlier ones.
 
+**When to use:** For wireframe and shaded surface rendering where the mesh is approximately convex (typical for GAM surfaces over a rectangular grid). This is the standard technique for 3D→SVG rendering without a depth buffer.
+
+**Trade-offs:**
+- Pro: No new rendering path — works entirely through existing Bezier primitives
+- Pro: Painter's algorithm is simple: sort faces by Z-centroid, emit back-to-front
+- Pro: Verified approach for SVG-based 3D rendering (see prideout.net reference)
+- Con: O(n log n) sort per frame on face count. For a 20x20 grid = 361 faces — negligible.
+- Con: Painter's algorithm fails for non-convex or self-intersecting meshes. Acceptable for smooth GAM surfaces.
+
+**Example:**
 ```rust
-pub enum Transition {
-    FadeIn { duration: f64, easing: EasingFn },
-    FadeOut { duration: f64, easing: EasingFn },
-    Transform {
-        target_state: ObjectState,
-        duration: f64,
-        easing: EasingFn,
-    },
-    Introduce {
-        child: SceneObject,
-        effect: IntroEffect,
-        duration: f64,
-    },
-    Wait { duration: f64 },
-}
+// Inside SurfacePlot::to_primitives():
+let mut faces: Vec<(f64, [ScreenPt; 4], Color)> = grid_quads
+    .iter()
+    .filter_map(|quad| {
+        let normal = face_normal(&quad.world_pts);
+        let view_dir = camera.eye_direction_to_target();
+        if normal.dot(view_dir) >= 0.0 { return None; } // backface cull
+        let projected: Vec<ScreenPt> = quad.world_pts.iter()
+            .map(|p| project_to_screen(p, &camera))
+            .collect();
+        let z_centroid = projected.iter().map(|p| p.z_view).sum::<f64>() / 4.0;
+        let shade = compute_diffuse_shade(&normal, &camera, base_color);
+        Some((z_centroid, [projected[0], projected[1], projected[2], projected[3]], shade))
+    })
+    .collect();
 
-pub struct Timeline {
-    pub entries: Vec<TimelineEntry>,
-}
+// Sort back to front (smallest z_centroid first in view space, farthest first)
+faces.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
 
-pub struct TimelineEntry {
-    pub object_id: ObjectId,
-    pub transition: Transition,
-    pub start_time: f64,  // computed from sequencing
-}
-```
-
-**Why:** Data-driven transitions can be inspected, serialized, reordered, and optimized. Closures cannot.
-
-### Pattern 3: Scene Objects as Enum, Not Trait Objects
-
-**What:** Use an enum for scene object types rather than `Box<dyn SceneObject>`. Eidos has a known, bounded set of object types.
-**When:** When the set of visual primitives is closed and known at compile time.
-
-```rust
-pub enum SceneObject {
-    Axes(AxesConfig),
-    Curve(CurveConfig),
-    ConfidenceBand(BandConfig),
-    Label(LabelConfig),
-    Group(Vec<SceneObject>),
-    Point(PointConfig),
-    Line(LineConfig),
+for (_, pts, color) in &faces {
+    let bezier = Bezier::new()
+        .move_to(pts[0].x, pts[0].y)
+        .line_to(pts[1].x, pts[1].y)
+        .line_to(pts[2].x, pts[2].y)
+        .line_to(pts[3].x, pts[3].y)
+        .close()
+        .fill(*color)
+        .stroke(Color::rgb(40, 40, 40), 0.5).unwrap();
+    prims.push(bezier.into());
 }
 ```
 
-**Why:** Enums give exhaustive matching (compiler catches missing cases), no vtable overhead, and simpler serialization. Add a trait-object escape hatch (`Custom(Box<dyn CustomObject>)`) later if needed.
+### Pattern 4: Surface Fitting Animation (Flat→Final Morph)
 
-### Pattern 4: Frame Iterator Pattern
+**What:** SurfacePlot holds a `Vec<Vec<f64>>` of fitted z-values. A single `Tween<f64>` progress in [0.0, 1.0] drives per-vertex interpolation from a flat surface (all z = mean_z) to the final fitted surface. This is the SplineFit animate_fit() pattern extended to a 2D grid.
 
-**What:** The animation engine produces frames as an iterator, decoupling frame generation from consumption.
-**When:** Always. This is the natural interface between animation engine and rendering pipeline.
+**When to use:** For animated surface reveal. Progress is a `Tween<f64>` using existing animation infrastructure — no new animation types needed.
 
+**Trade-offs:**
+- Pro: Reuses exact strategy from SplineFit (progress Tween, morph formula, then project)
+- Pro: All vertices morph simultaneously — correct behavior for 3D surfaces (unlike SplineFit's left-to-right reveal)
+- Pro: Zero new animation infrastructure
+
+**Example:**
 ```rust
-pub struct FrameIterator<'a> {
-    scene: &'a SceneGraph,
-    timeline: &'a Timeline,
-    frame_rate: f64,
-    current_frame: u64,
-    total_frames: u64,
-}
-
-impl<'a> Iterator for FrameIterator<'a> {
-    type Item = ResolvedScene;
-
-    fn next(&mut self) -> Option<ResolvedScene> {
-        if self.current_frame >= self.total_frames {
-            return None;
-        }
-        let t = self.current_frame as f64 / self.frame_rate;
-        let resolved = self.resolve_at(t);
-        self.current_frame += 1;
-        Some(resolved)
+// Inside SurfacePlot::to_primitives():
+let progress: f64 = match &self.animation {
+    None => 1.0,
+    Some(anim) => {
+        let tween = Tween { start: 0.0_f64, end: 1.0_f64,
+                            start_time: anim.start_time, duration: anim.duration,
+                            easing: anim.easing };
+        tween.value_at(t_secs)
     }
-}
+};
+let mean_z: f64 = self.z_values.iter().flatten().sum::<f64>()
+    / (self.z_values.len() * self.z_values[0].len()) as f64;
+// Per vertex:
+let morphed_z = mean_z + progress * (fitted_z - mean_z);
 ```
 
-**Why:** Iterator pattern enables lazy evaluation, easy parallelization of frame rendering, and composability with Rust's iterator adapters. The encoder can pull frames on demand rather than buffering everything in memory.
+## Data Flow
 
-### Pattern 5: Coordinate System Abstraction
+### Frame Render Flow (3D Surface)
 
-**What:** Scene objects use a logical coordinate system (e.g., data coordinates for plots). The SVG renderer maps logical coordinates to SVG viewport coordinates.
-**When:** Always. Users think in data space, not pixel space.
-
-```rust
-pub struct CoordinateMap {
-    pub x_range: (f64, f64),   // data space
-    pub y_range: (f64, f64),   // data space
-    pub viewport: Viewport,     // pixel space
-}
-
-impl CoordinateMap {
-    pub fn to_svg(&self, data_point: Point) -> SvgPoint {
-        // Linear mapping from data coordinates to SVG viewport
-    }
-}
+```
+Scene::render() calls build_scene(&mut builder, t_secs)
+    |
+    v
+User closure evaluates Tween<CameraState>.value_at(t_secs) → CameraState
+    |
+    v
+CameraState.to_camera(width, height) → Camera { eye, target, up, fov, viewport }
+    |
+    v
+SurfacePlot.to_primitives(&camera, t_secs)
+    |
+    v  [inside to_primitives]:
+    1. compute progress = Tween<f64>.value_at(t_secs)  ← fitting animation
+    2. interpolate z-values: z = mean_z + progress * (fitted_z - mean_z)
+    3. for each grid quad: project 4 world corners → screen (px, py) + view-space z_centroid
+    4. backface cull: skip if face_normal · view_dir >= 0
+    5. sort faces by z_centroid ascending (farthest first = back to front in SVG)
+    6. emit each face as filled Bezier with diffuse shading (color from z-height + light dir)
+    7. optionally emit wireframe lines on top
+    |
+    v
+ScatterPlot3D.to_primitives(&camera) → Vec<Circle>  (projected scatter dots)
+    |
+    v
+Vec<Primitive>  (all Bezier, Circle — no new Primitive variants)
+    |
+    v
+SceneBuilder.primitives accumulates all
+    |
+    v
+svg_gen::build_svg_document()   ← UNCHANGED
+    |
+    v
+svg_gen::rasterize_frame()      ← UNCHANGED
+    |
+    v
+ffmpeg stdin                     ← UNCHANGED
 ```
 
-## Anti-Patterns to Avoid
+### Camera Orbit Animation Flow
 
-### Anti-Pattern 1: Scene-Renderer Coupling (Manim's Mistake)
+```
+Tween<CameraState> { start, end, start_time, duration, easing }
+    | value_at(t_secs)
+    v
+CameraState { azimuth_deg=lerp, elevation_deg=lerp, distance=lerp, ... }
+    | to_camera(viewport_w, viewport_h)
+    v
+Camera { eye=(x,y,z) from spherical conversion, target, up=(0,1,0), fov_deg=45 }
+    | passed to SurfacePlot.to_primitives()
+    v
+Projection applied per vertex each frame
+```
 
-**What:** Manim's Scene class is tightly coupled to its Renderer -- the official docs acknowledge "there is a lot of interplay between a scene and its renderer, which is a flaw" they are working to reduce.
-**Why bad:** Makes it impossible to swap rendering backends, test scene logic without rendering, or add new output formats.
-**Instead:** Keep the scene graph and animation engine completely ignorant of rendering. They produce `ResolvedScene` data; the renderer consumes it. No renderer references leak into scene/animation types.
+### Projection Math Flow (per vertex)
 
-### Anti-Pattern 2: Imperative Animation Sequencing
+```
+World point (wx, wy, wz)
+    | view matrix (look-at transform from camera eye/target/up)
+    v
+View point (vx, vy, vz)     ← z_centroid for depth sorting taken here (in view space)
+    | perspective divide: clip_x = vx / -vz,  clip_y = vy / -vz
+    | scale by focal length: f = 1 / tan(fov/2)
+    v
+Clip space (cx, cy) in [-1, 1]
+    | viewport transform
+    v
+Screen point (px, py) in pixel coordinates  ← what Bezier/Circle receive
+```
 
-**What:** Manim uses `self.play(FadeIn(obj))` imperatively in a `construct()` method. The scene is built by executing side effects in order.
-**Why bad:** For eidos, the whole point is declarative composition. Imperative sequencing is harder to analyze, optimize, and compose. It also maps poorly to Rust (mutable self across async-like steps).
-**Instead:** Transitions are declared as data on the scene graph. The animation engine resolves sequencing from the declaration order and `.then()` chaining. No imperative "play" calls.
+## Integration Points
 
-### Anti-Pattern 3: Storing Animation State on Objects
+### New vs Modified Components
 
-**What:** Modifying scene objects in place during animation (Manim mutates mobjects directly).
-**Why bad:** In Rust, this creates borrow checker conflicts with the scene graph. Conceptually, the "source of truth" should be the scene graph + transitions, not mutated object state.
-**Instead:** The animation engine reads the scene graph immutably and produces new `ResolvedScene` snapshots. Scene objects are never mutated during rendering. This is a functional approach: `resolve(scene_graph, time) -> resolved_scene`.
+| Component | Status | Change Required |
+|-----------|--------|-----------------|
+| `svg_gen.rs` | UNCHANGED | None — only ever receives existing Primitive types |
+| `Bezier` primitive | UNCHANGED | None — `.fill()` already works for shaded quads |
+| `Circle` primitive | UNCHANGED | None — used as-is for projected scatter dots |
+| `Line` primitive | UNCHANGED | None — optionally used for axis frame edges |
+| `Primitive` enum | UNCHANGED | No new variants needed |
+| `Tween<P>` | UNCHANGED | Works as-is; `Tween<CameraState>` and `Tween<f64>` both work |
+| `Easing` | UNCHANGED | Works as-is |
+| `SceneBuilder` | MODIFIED | Add `add_surface_plot(&SurfacePlot, &Camera, t_secs)` — mirrors `add_axes()` |
+| `lib.rs` | MODIFIED | Add re-exports for Camera, CameraState, SurfacePlot, ScatterPlot3D |
+| `dataviz/mod.rs` | MODIFIED | Add module declarations and re-exports |
+| `camera.rs` | NEW | Camera, CameraState (CanTween), look-at matrix, projection math |
+| `surface_plot.rs` | NEW | SurfacePlot struct, to_primitives(), fitting animation |
+| `scatter_plot3d.rs` | NEW | ScatterPlot3D, projects Vec<(f64,f64,f64)> to Vec<Circle> |
 
-### Anti-Pattern 4: String-Based SVG Assembly
+### Internal Boundaries
 
-**What:** Building SVG by concatenating strings manually.
-**Why bad:** Injection bugs, no validation, hard to maintain, no structure.
-**Instead:** Use the `svg` crate or a typed SVG builder that produces well-formed documents from structured data.
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| `SurfacePlot` ↔ `camera.rs` | Direct function calls: `project_to_screen(pt, cam)`, `face_normal(pts)` | Not trait-based; no dynamic dispatch needed |
+| `SurfacePlot` → `Primitive` enum | Returns `Vec<Primitive>` — same contract as Axes::to_primitives() | Enables reuse of entire downstream pipeline unchanged |
+| `CameraState` ↔ `Tween<P>` | CameraState derives CanTween — identical to CircleState | No new animation infrastructure |
+| `SceneBuilder` ↔ `SurfacePlot` | `add_surface_plot()` calls `to_primitives()` and loops `add()` | 5-line method, mirrors `add_axes()` exactly |
+| User API ↔ `dataviz` | New types re-exported at crate root | Same ergonomics as v1.0 public types |
 
 ## Suggested Build Order
 
-Components have clear dependency ordering. Build from the bottom up, validate each layer independently.
+Dependencies flow top-to-bottom. Each step builds only on what exists above it.
 
 ```
-Phase 1: Foundation Types
-  - Core types: Point, Color, BezierPath
-  - Interpolatable trait + implementations
-  - Easing functions (linear, ease-in-out, cubic bezier)
-  - No dependencies on other components
+Step 1: camera.rs
+        What: Camera struct, CameraState (#[derive(CanTween)]), look-at matrix,
+              project_to_screen() function, face_normal(), backface_cull()
+        Depends on: keyframe-derive (existing), f64 math only
+        Validates: Unit-test projection with known camera → known expected screen coords
+        Note: No surface needed to test projection math in isolation
 
-Phase 2: Scene Graph
-  - SceneObject enum (Axes, Curve, Band, Label, Group, Line, Point)
-  - SceneGraph struct (tree of objects with IDs)
-  - Transition enum
-  - Builder API for constructing scenes programmatically
-  - Depends on: Phase 1 types
+Step 2: SurfacePlot static rendering (no animation yet)
+        What: SurfacePlot::new(x_pts, y_pts, z_grid), to_primitives(&camera, 1.0)
+              painter's algorithm face sort, diffuse shading, quad→Bezier
+        Depends on: camera.rs (Step 1), Bezier (existing), Primitive enum (existing)
+        Validates: Render a static surface, visually inspect output
+        Note: Build and validate projection pipeline before adding animation complexity
 
-Phase 3: Animation Engine
-  - Timeline construction from scene graph transitions
-  - Frame resolution: resolve(scene_graph, time) -> ResolvedScene
-  - FrameIterator
-  - Depends on: Phase 1 (interpolation), Phase 2 (scene graph)
+Step 3: SceneBuilder::add_surface_plot()
+        What: One convenience method mirroring add_axes()
+        Depends on: surface_plot.rs (Step 2), SceneBuilder (existing)
+        Note: 5-line addition; enables all subsequent examples to use final API
 
-Phase 4: SVG Renderer
-  - ResolvedObject -> SVG element conversion
-  - Coordinate mapping (data space -> SVG viewport)
-  - Full SVG document composition
-  - Depends on: Phase 1 (types), Phase 3 output (ResolvedScene)
+Step 4: Surface fitting animation
+        What: SurfacePlot::animate_fit(start_time, duration, easing)
+              to_primitives() consumes t_secs, evaluates Tween<f64> progress,
+              morphs z-values from mean_z to fitted_z
+        Depends on: surface_plot.rs (Step 2), Tween<f64> (existing)
+        Note: Port SplineFit's animate_fit() pattern to 2D grid; same morph formula
 
-Phase 5: Rasterizer + Encoder Pipeline
-  - SVG string -> pixel buffer (resvg wrapper)
-  - Pixel buffer stream -> video file (ffmpeg subprocess)
-  - End-to-end: scene description -> video file
-  - Depends on: Phase 4 (SVG output)
+Step 5: ScatterPlot3D
+        What: ScatterPlot3D::new(points: Vec<(f64,f64,f64)>),
+              to_primitives(&camera) → Vec<Circle> (projected + sized by depth)
+        Depends on: camera.rs (Step 1), Circle (existing)
+        Note: Simplest new type; only needs projection, no face sorting
 
-Phase 6: Declarative Macro API
-  - scene! { } macro that expands to builder API calls
-  - Ergonomic sugar on top of the builder
-  - Depends on: Phase 2 (builder API must be stable first)
-
-Phase 7: GAM-Specific Primitives
-  - SplineFit, PartialDependence, ConfidenceBand as high-level objects
-  - Built on top of Curve, Band, Axes primitives
-  - Depends on: Phases 2-5 (full pipeline working)
+Step 6: Camera rotation animation (integration test + docs)
+        What: Tween<CameraState> in a render closure, verify orbit looks correct
+        Depends on: camera.rs (Step 1), CameraState derives CanTween already
+        Note: No new library code needed. This step is integration test + API documentation.
 ```
 
-**Rationale for this ordering:**
-- Bottom-up: each phase is independently testable
-- Phase 1 is pure math, no IO, easy to get right with property tests
-- Phase 2-3 can be tested by inspecting ResolvedScene data (no rendering needed)
-- Phase 4 can be tested by diffing SVG strings against expected output
-- Phase 5 is integration-heavy, defer until the logic layers are solid
-- Phase 6 (macros) should wrap a stable API, not drive its design
-- Phase 7 is domain-specific, requires the full pipeline
+### Rationale for This Order
 
-## Scalability Considerations
+- **Step 1 first:** Every other new component depends on the camera/projection math. Isolating and validating this math before building on top of it prevents debugging projection bugs mixed with surface or animation bugs.
+- **Step 2 static before Step 4 animated:** Static rendering validates face sorting and shading visually without the time dimension. Adding animation on top of a verified static render is far safer.
+- **Step 3 early:** The SceneBuilder method is trivial but having it early means all subsequent testing uses the final public API.
+- **Step 5 after Step 2:** ScatterPlot3D is simple (no face sorting) but projection must be verified first. Building in Step 5 means the projection math is battle-tested.
+- **Step 6 as test/doc:** CameraState Tween works as soon as Step 1 is complete. No library code needed — just an integration test demonstrating the orbit animation and documenting the azimuth boundary issue.
 
-| Concern | Eidos v1 (personal tooling) | Future (general-purpose) |
-|---------|----------------------------|--------------------------|
-| Frame count | 30fps x 30s = 900 frames, sequential is fine | Parallelize frame rendering with rayon |
-| Object count | <50 objects per scene | Spatial partitioning, dirty-region tracking |
-| SVG complexity | Simple paths, resvg handles it | Consider direct tiny-skia rendering (skip SVG string) |
-| Memory | Hold one frame in memory at a time (iterator pattern) | Same -- iterator pattern scales |
-| Video size | 1080p MP4, ffmpeg handles it | Same -- ffmpeg scales |
+## Scaling Considerations
 
-## Key Architectural Decisions
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| Small grid (10x10 = 81 quads) | Per-frame projection + sort is well under 1ms. No changes needed. |
+| Medium grid (30x30 = 841 quads) | Still fast; sort is O(n log n) on ~841 elements. Recommended default cap. |
+| Large grid (100x100 = 9801 quads) | Sort begins to matter at 30fps. Consider caching sorted order when camera is static. Out of scope for v1.1. |
 
-### Why SVG as Intermediate Representation
+### Scaling Priorities
 
-The SVG-per-frame approach has a crucial advantage for v1: **debuggability**. You can open any frame's SVG in a browser and inspect it visually. This makes the rendering pipeline transparent. The cost is string serialization/parsing overhead per frame, which is negligible at 900 frames.
+1. **First bottleneck:** SVG document size. Each quad becomes a `<path>` element. A 30x30 mesh = 841 path elements per frame. At 30fps x 10s = 300 frames, resvg parses 300 SVG documents with 841 paths each. Profiling needed if render time is unacceptable. Mitigation: cap default grid resolution, expose `resolution` parameter.
+2. **Second bottleneck:** Projection computation. 30x30 = 900 vertices projected per frame. Pure f64 math, no allocations — negligible. Only relevant above ~50k vertices.
 
-If performance becomes an issue later, the architecture supports dropping SVG entirely: the SVG Renderer can be replaced with a "direct tiny-skia renderer" that writes to pixel buffers directly from ResolvedScene, without changing any upstream components.
+## Anti-Patterns
 
-### Why Not an ECS (Entity Component System)
+### Anti-Pattern 1: Adding a 3D Rendering Path to svg_gen.rs
 
-The `noon` project used Bevy ECS for state management. For eidos, this is overkill:
-- Eidos scenes have <50 objects, not thousands
-- The declarative model means no dynamic entity creation during animation
-- ECS adds significant dependency weight (Bevy) and conceptual overhead
-- A simple tree (Vec-based scene graph) is sufficient and more debuggable
+**What people do:** Add `Primitive::SurfaceMesh(SurfaceMesh)` to the Primitive enum and handle 3D projection inside `build_svg_document()`.
 
-### Why Enum Over Trait Objects for Scene Objects
+**Why it's wrong:** This entangles projection math (camera, matrices, depth sorting) with the SVG serialization layer. The existing design deliberately keeps svg_gen.rs as a pure Primitive→SVG serializer. Breaking this contract propagates 3D complexity into the wrong layer and makes the rendering pipeline harder to reason about.
 
-Eidos has a closed set of visual primitives. Using an enum:
-- Enables exhaustive pattern matching (compiler catches missing renderers)
-- Avoids `Box<dyn>` heap allocation
-- Makes serialization trivial (derive Serialize)
-- Can add `Custom(Box<dyn ...>)` variant later for extensibility
+**Do this instead:** Project to 2D inside `SurfacePlot::to_primitives()`, return `Vec<Primitive>`, let svg_gen.rs remain completely unchanged.
+
+### Anti-Pattern 2: Deriving CanTween on Camera Directly (Cartesian Interpolation)
+
+**What people do:** Define Camera with Cartesian eye position (eye_x, eye_y, eye_z), derive CanTween directly on Camera, and use `Tween<Camera>` for orbit animation.
+
+**Why it's wrong:** Linear interpolation between two Cartesian eye positions does not follow an arc — it cuts through the interior of the orbit sphere, producing a zoom-in/zoom-out motion rather than a rotation. Spherical parameters (azimuth, elevation, distance) are the correct representation for orbit motion because they interpolate linearly in angular space.
+
+**Do this instead:** Keep CameraState in spherical coordinates. Derive CanTween on CameraState. Convert to Cartesian eye position only at render time via `to_camera()`.
+
+### Anti-Pattern 3: Per-Edge Lines for Wireframe Rendering
+
+**What people do:** Emit each wireframe edge as a `Line` primitive and try to manage visibility by tracking which edges belong to front-facing quads.
+
+**Why it's wrong:** A 20x20 mesh has 760+ grid edges. With per-edge Lines, z-ordering is impossible (Lines have no fill to occlude behind them). Front-face edge detection requires knowing which faces share each edge — O(n²) neighbor lookups. The approach also does not generalize to shaded surfaces.
+
+**Do this instead:** Emit filled `Bezier` quads sorted back-to-front. Use a thin stroke on each filled quad for the wireframe appearance. The fill handles occlusion naturally. The stroke creates the wireframe look without any edge-tracking complexity.
+
+### Anti-Pattern 4: Pre-Computing Projection Outside the Render Closure
+
+**What people do:** Project all mesh vertices to screen space before the render loop starts and cache screen-space coordinates in the SurfacePlot struct.
+
+**Why it's wrong:** Camera animation requires re-projection every frame as the viewpoint changes. Pre-computing screen coordinates assumes a static camera. Even for static cameras, it creates an inconsistent two-phase API where users must call a "project" step before rendering.
+
+**Do this instead:** Project inside `to_primitives(&camera, t_secs)`, which is called per-frame inside the render closure with the current frame's camera state. This is what SplineFit::to_bezier() does — it takes t_secs and recomputes each frame. Consistency with existing patterns matters more than micro-optimization here.
+
+### Anti-Pattern 5: Sorting SVG Elements via Z-Buffer Rather Than Document Order
+
+**What people do:** Attempt to implement a z-buffer by tracking pixel-level coverage and emitting only visible face fragments.
+
+**Why it's wrong:** SVG is not a rasterization API. Per-pixel z-tests require a pixel buffer, not a vector document. Implementing this in SVG would require tessellating faces into non-overlapping regions — complexity that is completely unnecessary for smooth convex surfaces.
+
+**Do this instead:** Painter's algorithm (back-to-front sort by face Z-centroid). For typical smooth GAM surfaces, painter's algorithm is correct and produces no visual artifacts.
 
 ## Sources
 
-- [Manim Deep Dive (official internals documentation)](https://docs.manim.community/en/stable/guides/deep_dive.html) - HIGH confidence
-- [Manim Community Architecture Overview (DeepWiki)](https://deepwiki.com/ManimCommunity/manim) - MEDIUM confidence
-- [noon: Rust Manim-inspired animation engine](https://github.com/yongkyuns/noon) - MEDIUM confidence (unmaintained but architecturally informative)
-- [mathlikeanim-rs: Rust math animation library](https://github.com/MathItYT/mathlikeanim-rs) - MEDIUM confidence
-- [tiny-skia: CPU 2D rendering](https://github.com/linebender/tiny-skia) - HIGH confidence
-- [resvg: SVG rendering library](https://github.com/linebender/resvg) - HIGH confidence
-- [svg crate: SVG generation](https://crates.io/crates/svg) - HIGH confidence
-- [tween crate: easing functions](https://docs.rs/tween) - MEDIUM confidence
+- Painter's algorithm for SVG face ordering: [3D Wireframes in SVG — Philip Rideout](https://prideout.net/blog/svg_wireframes/) — HIGH confidence (technical blog with verified implementation)
+- Perspective projection matrix math: [Scratchapixel — Perspective and Orthographic Projection Matrix](https://www.scratchapixel.com/lessons/3d-basic-rendering/perspective-and-orthographic-projection-matrix/building-basic-perspective-projection-matrix.html) — HIGH confidence (canonical reference)
+- Painter's algorithm overview: [Painter's Algorithm — Wikipedia](https://en.wikipedia.org/wiki/Painter%27s_algorithm) — HIGH confidence
+- CanTween derive on f64 structs: [keyframe crate — docs.rs](https://docs.rs/keyframe/latest/keyframe/) — HIGH confidence (verified against existing codebase usage in circle.rs)
+- 3D projection pipeline: [3D projection — Wikipedia](https://en.wikipedia.org/wiki/3D_projection) — MEDIUM confidence (general reference)
+- SVG polygon depth-sorting implementation: [SVG 3D projection — TomasHubelbauer/svg-3d](https://github.com/TomasHubelbauer/svg-3d) — MEDIUM confidence (reference implementation)
+- Existing eidos source code (authoritative ground truth for all integration points): HIGH confidence
+
+---
+*Architecture research for: eidos v1.1 — 3D Surface Visualization integration into 2D SVG pipeline*
+*Researched: 2026-02-25*

@@ -9,6 +9,7 @@ resvg = "0.47"
 ttf-noto-sans = "0.1"
 keyframe = "1.1"
 keyframe_derive = "1.0"
+nalgebra = "0.34"
 
 [[example]]
 name = "basic_scene"

@@ -1,7 +1,7 @@
 # Technology Stack
 
 **Project:** eidos -- Manim-inspired Rust animation/visualization library
-**Researched:** 2026-02-24
+**Researched:** 2026-02-24 (v1.0) / 2026-02-25 (v1.1 addendum)
 
 ## Recommended Stack
 
@@ -226,3 +226,145 @@ image = "0.25"
 - [noon GitHub](https://github.com/yongkyuns/noon) -- Manim-inspired, abandoned Feb 2022
 - [lyon on lib.rs](https://lib.rs/crates/lyon) -- path tessellation, v1.0.16
 - [Linebender blog (resvg stewardship)](https://linebender.org/blog/tmil-14/)
+
+---
+
+## v1.1 Addendum: 3D Surface Mesh Rendering
+
+**Researched:** 2026-02-25
+**Scope:** What new dependencies, math, and patterns are needed to add 3D perspective mesh rendering, camera orbit animation, surface fitting animation, and scatter point visualization — while staying within the existing SVG pipeline.
+
+### Conclusion Up Front
+
+**One new dependency: `nalgebra = "0.34"`.**
+
+Everything else — mesh grid generation, painter's algorithm depth sorting, SVG polygon emission, camera orbit parameterization, surface morph interpolation — is implemented in-crate with 10–30 lines of Rust per concern. No new crates beyond nalgebra are warranted.
+
+### New Dependency
+
+| Technology | Version | Purpose | Why Recommended | Confidence |
+|------------|---------|---------|-----------------|------------|
+| `nalgebra` | `0.34` | 3D linear algebra: `Point3<f64>`, `Vector3<f64>`, `Matrix4<f64>`, `Perspective3`, `Isometry3` view transforms | `Perspective3::project_point()` is the exact API needed to map 3D world coordinates to 2D NDC space. `Isometry3::look_at_rh(eye, target, up)` produces the view matrix for camera orbit. f64 native throughout — no precision loss from scientific data. Latest version 0.34.1 released Sep 20, 2025. Actively maintained by dimforge. | HIGH |
+
+Add to `Cargo.toml`:
+
+```toml
+nalgebra = "0.34"
+```
+
+### Why nalgebra Over glam
+
+Both nalgebra 0.34 and glam 0.32 (Feb 11, 2026) are actively maintained. The choice is nalgebra because:
+
+1. **`Perspective3` exists as a first-class type.** `Perspective3::project_point(&point)` projects a `Point3<f64>` to NDC in one call. With glam, you construct a raw `DMat4::perspective_rh(...)` and multiply manually — achievable, but more code for zero benefit.
+2. **`Isometry3::look_at_rh(eye, target, up)` exists.** Camera construction as a typed isometry, not raw matrix math.
+3. **f64 is idiomatic in nalgebra.** glam's primary types are f32; f64 variants exist (`DVec3`, `DMat4`) but are secondary. For scientific visualization (GAM output data, precise axis coordinates), f64 is non-negotiable.
+4. **Dimforge ecosystem coherence.** If physics simulation or constraint solving is ever added, nalgebra is the bridge.
+
+glam would be the right choice for a game engine or f32 performance-critical path. This is neither.
+
+### What Is NOT Needed as a Dependency
+
+| Capability | Why No Dependency |
+|------------|-------------------|
+| NxM mesh grid generation | `(0..n).flat_map(|i| (0..m).map(|j| world_point(i, j)))` — 5 lines of Rust |
+| Painter's algorithm depth sort | `faces.sort_by(|a, b| a.centroid_z().partial_cmp(&b.centroid_z()))` — 3 lines |
+| SVG polygon / fill output | `svg::node::element::Polygon` already exists in `svg = "0.18"` |
+| Camera orbit parameterization | `(azimuth, elevation, radius)` → Cartesian eye point is 4 lines of trig |
+| Surface morph interpolation | Existing `Tween<P>` + `CanTween` derive handles any f64 struct. Extend `SurfaceState` to hold a `Vec<f64>` z-values grid. |
+| Color-by-height mapping | Linear interpolation between two colors over a value range — in-crate |
+
+Do not add `ndarray`, `meshgrid`, `itertools`, `interpn`, `genmesh`, or `plotters` as 3D helpers. Each adds transitive dependencies for functionality achievable in one function.
+
+### 3D-to-SVG Rendering Architecture
+
+The entire 3D pipeline lives within the per-frame `to_svg_elements()` call — the same pattern as existing 2D primitives. No changes to the rendering pipeline itself.
+
+```
+SurfaceMesh { vertices: Vec<Vec<Point3<f64>>>, ... }
+    |
+    v  [per frame, inside to_svg_elements()]
+    |
+Build NxM grid of Point3<f64> in world space
+(or accept user-supplied grid for fitted surface)
+    |
+    v
+nalgebra: view_matrix = Isometry3::look_at_rh(eye, target, up).to_homogeneous()
+           proj_matrix = Perspective3::new(aspect, fovy, znear, zfar).as_matrix()
+           mvp = proj_matrix * view_matrix
+    |
+    v
+For each vertex: ndc = mvp * homogeneous(point)
+                 screen_x = (ndc.x / ndc.w + 1.0) * width / 2.0
+                 screen_y = (1.0 - ndc.y / ndc.w) * height / 2.0
+    |
+    v
+Build quad faces: each face = 4 projected screen points + depth = centroid z in view space
+    |
+    v
+Sort faces back-to-front by view-space z (painter's algorithm)
+    |
+    v
+Emit SVG <polygon points="x1,y1 x2,y2 x3,y3 x4,y4"> with fill + stroke per face
+    |
+    v
+Existing resvg rasterization pipeline — UNCHANGED
+```
+
+### Rendering Variants and SVG Approach
+
+| Variant | SVG Element | Notes |
+|---------|-------------|-------|
+| Wireframe only | `<polygon fill="none" stroke="#color">` | Clean Manim aesthetic |
+| Flat shaded (solid) | `<polygon fill="rgb(r,g,b)" stroke="#color">` | Per-face color from height or colormap |
+| Shaded + wireframe | Two polygon layers: fill then stroke | Or single polygon with both attributes |
+| Scatter points | `<circle cx="..." cy="..." r="...">` | Projected and depth-sorted with faces |
+
+No SVG gradients or per-vertex shading needed. Flat per-face color is the correct aesthetic for a Manim-inspired library and is much simpler to implement.
+
+### Animation Patterns
+
+| Animation | Implementation |
+|-----------|----------------|
+| Surface fitting (flat → final) | `SurfaceState { z_values: Vec<f64> }` deriving `CanTween`. Each frame interpolates z_values. Exact same pattern as SplineFit. |
+| Camera orbit | `CameraState { azimuth: f64, elevation: f64, radius: f64 }` deriving `CanTween`. Each frame: compute eye = spherical_to_cartesian(azimuth, elevation, radius), call look_at_rh. |
+| Scatter point appearance | `ScatterPointState { x, y, z, alpha: f64 }` — tween alpha 0→1. |
+
+All of these fit the existing `Tween<P: CanTween>` system without modification to the animation engine.
+
+### Depth Sorting Limitation and Acceptance Criterion
+
+The painter's algorithm with centroid depth sorting has known failure cases: highly non-convex surfaces where faces interleave. For GAM partial dependence surfaces and smooth analytical surfaces, this never occurs at reasonable mesh densities (20×20 to 100×100 quads). Acceptance criterion: no visible depth artifacts on smooth surfaces. If a future use case requires non-convex geometry, revisit with BSP tree or z-buffer composite — but that is not a v1.1 concern.
+
+### What NOT to Add
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| `wgpu` / GPU path | Adds GPU driver dependency, breaks headless CI, forces pixel output | SVG painter's algorithm — already described |
+| `glam` | f32-first design; no `Perspective3`/`Isometry3` helpers; more code for same result | `nalgebra 0.34` |
+| `plotters` as 3D sub-renderer | Couples projection + styling + output; v0.3.7 (Sep 2024) API is opinionated and inflexible for eidos's aesthetic | Own the 3D-to-SVG path in-crate |
+| `cgmath` | Largely unmaintained (last release 2022). No `Perspective3` analog. | `nalgebra 0.34` |
+| `kiss3d` | Interactive window-based renderer; not headless, not SVG | Not applicable |
+| `ndarray` for mesh grids | Vec of Vecs is sufficient; ndarray adds a large transitive dep tree for zero ergonomic gain at this scale | `Vec<Vec<nalgebra::Point3<f64>>>` |
+| `fast-surface-nets` | Extracts isosurfaces from signed distance fields — wrong domain. Surface mesh from `f(x,z)->y` is just nested loops. | In-crate grid construction |
+
+### Confirmed Versions (as of 2026-02-25)
+
+| Crate | Latest Version | Release Date | Status |
+|-------|---------------|--------------|--------|
+| `nalgebra` | 0.34.1 | Sep 20, 2025 | Actively maintained |
+| `glam` (considered, not chosen) | 0.32.0 | Feb 11, 2026 | Actively maintained |
+| `plotters` (considered, not chosen) | 0.3.7 | Sep 8, 2024 | Active |
+| `cgmath` (ruled out) | ~0.18 | 2022 | Largely unmaintained |
+
+### v1.1 Sources
+
+- [lib.rs/crates/nalgebra](https://lib.rs/crates/nalgebra) — version 0.34.1 (Sep 20, 2025) confirmed HIGH
+- [docs.rs nalgebra Perspective3](https://docs.rs/nalgebra/latest/nalgebra/geometry/struct.Perspective3.html) — `project_point()` API confirmed HIGH
+- [docs.rs nalgebra Isometry3](https://docs.rs/nalgebra/latest/nalgebra/geometry/type.Isometry3.html) — `look_at_rh()` confirmed MEDIUM (via search summary)
+- [docs.rs glam DMat4](https://docs.rs/glam/latest/glam/f64/struct.DMat4.html) — `perspective_rh`, `look_at_rh` confirmed in glam 0.32.0 HIGH
+- [lib.rs/crates/glam](https://lib.rs/crates/glam) — version 0.32.0 (Feb 11, 2026) confirmed HIGH
+- [lib.rs/crates/plotters](https://lib.rs/crates/plotters) — version 0.3.7 (Sep 8, 2024); SVG backend and coupled architecture confirmed HIGH
+- [github.com/plotters-rs 3d-plot.rs example](https://github.com/plotters-rs/plotters/blob/master/plotters/examples/3d-plot.rs) — SVGBackend usage and projection approach confirmed HIGH
+- [dimforge.com rapier 2025 review](https://dimforge.com/blog/2026/01/09/the-year-2025-in-dimforge/) — nalgebra vs glam design rationale from nalgebra authors HIGH
+- [bitshifter/mathbench-rs](https://github.com/bitshifter/mathbench-rs) — glam vs nalgebra performance comparison MEDIUM
