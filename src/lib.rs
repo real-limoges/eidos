@@ -9,7 +9,7 @@ pub mod svg_gen;
 
 pub use animation::{Easing, Tween};
 pub use color::Color;
-pub use dataviz::{Axes, AxisRange, ConfidenceBand, DataCurve, SplineFit};
+pub use dataviz::{Axes, AxisRange, Camera, ConfidenceBand, DataCurve, Point2D, Point3D, SplineFit, SurfacePlot, Vector3D};
 pub use error::EidosError;
 pub use primitives::{Arrow, Bezier, Circle, Line, Primitive, Rect, Text};
 pub use primitives::circle::CircleState;
