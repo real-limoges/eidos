@@ -107,10 +107,12 @@ Plans:
   1. User can specify upper and lower bound curves and render a shaded confidence band (filled region between them) on axes
   2. User can animate a spline fitting to data -- the output video shows a curve transitioning from a flat/initial state to the fitted curve shape over time
   3. Confidence bands and spline animations compose with axes and data curves from Phase 3 -- a single scene can show axes, data curve, confidence band, and spline fit animation together
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: TBD
+- [ ] 04-01-PLAN.md — Shared Catmull-Rom helper (spline.rs) + ConfidenceBand struct + Axes::add_band() integration
+- [ ] 04-02-PLAN.md — SplineFit struct with frame-time morphing: left-to-right reveal + y-value interpolation from mean_y
+- [ ] 04-03-PLAN.md — Wire lib.rs pub use, gam_plot example, integration tests, human visual confirmation
 
 ## Progress
 
@@ -124,4 +126,4 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 3.5 -> 4
 | 2.5. Tech Debt Cleanup | 2/2 | Complete    | 2026-02-25 |
 | 3. Data Visualization | 3/3 | Complete   | 2026-02-25 |
 | 3.5. Dataviz Tech Debt Cleanup | 1/1 | Complete   | 2026-02-25 |
-| 4. GAM Visualization | 0/0 | Not started | - |
+| 4. GAM Visualization | 0/3 | Not started | - |
