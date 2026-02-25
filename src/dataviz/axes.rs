@@ -94,6 +94,54 @@ impl Axes {
         self
     }
 
+    /// Return the tick-adjusted plot bounds used for coordinate mapping.
+    ///
+    /// These are the actual data-space range endpoints determined by Heckbert tick generation
+    /// on top of data auto-range or explicit range. This is the same coordinate system
+    /// that `to_primitives()` uses when mapping data points to pixel coordinates.
+    ///
+    /// Returns `(x_min, x_max, y_min, y_max)` in **data space**.
+    ///
+    /// To convert a data point `(dx, dy)` to pixel coordinates using these bounds:
+    /// ```text
+    /// let px = axes.x + (dx - x_min) / (x_max - x_min) * axes.width;
+    /// let py = (axes.y + axes.height) - (dy - y_min) / (y_max - y_min) * axes.height;
+    /// ```
+    ///
+    /// When no data is present, returns a fallback range (-1.0, 1.0, -1.0, 1.0).
+    pub fn plot_bounds(&self) -> (f64, f64, f64, f64) {
+        // Step 1: Resolve data ranges (mirrors to_primitives() Steps 1-2)
+        let all_x: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.0))
+            .chain(self.bands.iter().flat_map(|b| b.upper_points.iter().chain(b.lower_points.iter()).map(|p| p.0)))
+            .collect();
+        let all_y: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.1))
+            .chain(self.bands.iter().flat_map(|b| b.upper_points.iter().chain(b.lower_points.iter()).map(|p| p.1)))
+            .collect();
+
+        let (x_data_min, x_data_max) = compute_range(&all_x, AUTO_PADDING_FRAC);
+        let (y_data_min, y_data_max) = compute_range(&all_y, AUTO_PADDING_FRAC);
+
+        let (x_min, x_max) = match &self.x_range {
+            AxisRange::Auto => (x_data_min, x_data_max),
+            AxisRange::Explicit(lo, hi) => (*lo, *hi),
+        };
+        let (y_min, y_max) = match &self.y_range {
+            AxisRange::Auto => (y_data_min, y_data_max),
+            AxisRange::Explicit(lo, hi) => (*lo, *hi),
+        };
+
+        // Step 2: Tick-adjusted bounds (Heckbert nice-numbers)
+        let x_ticks = generate_ticks(x_min, x_max, TARGET_TICK_COUNT);
+        let y_ticks = generate_ticks(y_min, y_max, TARGET_TICK_COUNT);
+
+        let x_axis_min = x_ticks.first().copied().unwrap_or(x_min);
+        let x_axis_max = x_ticks.last().copied().unwrap_or(x_max);
+        let y_axis_min = y_ticks.first().copied().unwrap_or(y_min);
+        let y_axis_max = y_ticks.last().copied().unwrap_or(y_max);
+
+        (x_axis_min, x_axis_max, y_axis_min, y_axis_max)
+    }
+
     /// Decompose the Axes into constituent primitives for insertion into a SceneBuilder.
     ///
     /// Produces: axis lines (X, Y), tick marks, tick labels, grid lines, curve paths.
@@ -472,5 +520,43 @@ mod tests {
         // Should not panic; just verify we get primitives
         let prims = axes.to_primitives();
         assert!(!prims.is_empty());
+    }
+
+    #[test]
+    fn plot_bounds_explicit_range_returns_tick_adjusted_values() {
+        use crate::dataviz::DataCurve;
+        let data = vec![(0.0, 0.0), (10.0, 1.0)];
+        let curve = DataCurve::new(data).unwrap();
+        let axes = Axes::new(80.0, 60.0, 800.0, 500.0)
+            .x_range(0.0, 10.0)
+            .y_range(-1.0, 1.0)
+            .add_curve(curve);
+        let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
+        // Heckbert on [0.0, 10.0] with target 6 -> ticks 0, 2, 4, 6, 8, 10
+        assert!((x_min - 0.0).abs() < 1e-6, "x_min should be 0.0, got {}", x_min);
+        assert!((x_max - 10.0).abs() < 1e-6, "x_max should be 10.0, got {}", x_max);
+        assert!(y_min <= -1.0 + 1e-6, "y_min should be <= -1.0, got {}", y_min);
+        assert!(y_max >= 1.0 - 1e-6, "y_max should be >= 1.0, got {}", y_max);
+    }
+
+    #[test]
+    fn plot_bounds_consistent_with_to_primitives_coordinate_mapping() {
+        use crate::dataviz::DataCurve;
+        let data = vec![(0.0, 0.0), (5.0, 1.0), (10.0, 0.5)];
+        let curve = DataCurve::new(data).unwrap();
+        let axes = Axes::new(80.0, 60.0, 800.0, 500.0)
+            .x_range(0.0, 10.0)
+            .y_range(-0.5, 1.5)
+            .add_curve(curve);
+        let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
+        // Point at data (5.0, _) should map to pixel x in the middle of the plot area
+        let px = axes.x + (5.0 - x_min) / (x_max - x_min) * axes.width;
+        assert!(px > axes.x, "pixel x should be within plot area left edge");
+        assert!(px < axes.x + axes.width, "pixel x should be within plot area right edge");
+        // Bounds should contain the explicit range
+        assert!(x_min <= 0.0 + 1e-6, "x_min should be <= 0.0");
+        assert!(x_max >= 10.0 - 1e-6, "x_max should be >= 10.0");
+        assert!(y_min <= -0.5 + 1e-6, "y_min should be <= -0.5");
+        assert!(y_max >= 1.5 - 1e-6, "y_max should be >= 1.5");
     }
 }
