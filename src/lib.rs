@@ -9,6 +9,6 @@ pub mod svg_gen;
 
 pub use animation::{Easing, Tween};
 pub use color::Color;
-pub use dataviz::{Axes, AxisRange, ConfidenceBand, DataCurve};
+pub use dataviz::{Axes, AxisRange, ConfidenceBand, DataCurve, SplineFit};
 pub use error::EidosError;
 pub use scene::Scene;
