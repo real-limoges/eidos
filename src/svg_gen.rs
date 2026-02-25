@@ -96,7 +96,6 @@ pub fn rasterize_frame(
 /// Encode raw RGBA frames to an H.264 MP4 file via ffmpeg subprocess.
 ///
 /// Calls `frame_fn(frame_index)` once per frame to generate unique RGBA bytes for each frame.
-/// `frame_fn(frame_index)` once per frame to generate unique RGBA bytes for each frame.
 /// Frames are streamed directly to ffmpeg stdin — no memory accumulation.
 ///
 /// frame_fn receives the 0-based frame index (u64). Scene time in seconds is
