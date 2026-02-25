@@ -2,7 +2,7 @@
 //! Integration tests for Phase 3: Data Visualization
 //! Covers DATA-01 (axes), DATA-02 (smooth curves), DATA-03 (auto-range)
 
-use eidos::{Axes, AxisRange, Color, DataCurve};
+use eidos::{Axes, Color, DataCurve};
 
 // ---- DataCurve unit-level integration ----
 
@@ -133,4 +133,51 @@ fn axes_multiple_curves_each_produce_bezier_path() {
     assert!(two_curve_count > one_curve_count,
         "two curves should produce more primitives than one ({} vs {})",
         two_curve_count, one_curve_count);
+}
+
+// ---- E2E render test (CORE-01 + DATA-01 pipeline) ----
+
+use std::path::Path;
+
+fn ffmpeg_available() -> bool {
+    std::process::Command::new("ffmpeg")
+        .arg("-version")
+        .output()
+        .is_ok()
+}
+
+#[test]
+fn dataviz_render_produces_mp4() {
+    if !ffmpeg_available() {
+        eprintln!("SKIP: ffmpeg not found on PATH");
+        return;
+    }
+
+    let output_path = "/tmp/eidos_dataviz_test.mp4";
+    let _ = std::fs::remove_file(output_path);
+
+    use eidos::Scene;
+
+    let data = vec![(0.0, 0.0), (1.0, 1.0), (2.0, 0.5)];
+    let curve = DataCurve::new(data).unwrap();
+    let axes = Axes::new(100.0, 100.0, 800.0, 500.0).add_curve(curve);
+
+    let scene = Scene::new(1024, 640, 24).unwrap().duration(1.0);
+
+    scene.render_static(|s| {
+        s.add_axes(&axes);
+    }, output_path).expect("dataviz render should succeed");
+
+    assert!(
+        Path::new(output_path).exists(),
+        "MP4 file should exist at {}", output_path
+    );
+
+    let metadata = std::fs::metadata(output_path).unwrap();
+    assert!(
+        metadata.len() > 1024,
+        "MP4 should be at least 1KB, got {} bytes", metadata.len()
+    );
+
+    let _ = std::fs::remove_file(output_path);
 }

@@ -94,10 +94,10 @@ Plans:
   1. `tests/data_viz.rs` contains a `dataviz_render_produces_mp4` test that calls `scene.add_axes()`, `scene.render_static()`, and asserts a valid MP4 is produced on disk
   2. `data_plot` has an explicit `[[example]]` block in `Cargo.toml`, consistent with `basic_scene` and `animated_scene`
   3. The unused `AxisRange` import warning in `tests/data_viz.rs:5` is resolved (import removed or used)
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 03.5-01: TBD
+- [ ] 03.5-01-PLAN.md — Fix tests/data_viz.rs (remove unused AxisRange import, add dataviz_render_produces_mp4 E2E test) and add data_plot [[example]] to Cargo.toml
 
 ### Phase 4: GAM Visualization
 **Goal**: Users can render the core GAM visualization elements -- confidence bands and animated spline fits -- that no other Rust tool provides
@@ -123,5 +123,5 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 3.5 -> 4
 | 2. Animation Engine | 3/3 | Complete   | 2026-02-25 |
 | 2.5. Tech Debt Cleanup | 2/2 | Complete    | 2026-02-25 |
 | 3. Data Visualization | 3/3 | Complete   | 2026-02-25 |
-| 3.5. Dataviz Tech Debt Cleanup | 0/0 | Not started | - |
+| 3.5. Dataviz Tech Debt Cleanup | 0/1 | Not started | - |
 | 4. GAM Visualization | 0/0 | Not started | - |
