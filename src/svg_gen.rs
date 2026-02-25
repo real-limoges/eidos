@@ -174,3 +174,79 @@ pub fn encode_to_mp4(
 
     Ok(())
 }
+
+/// Encode raw RGBA frames to an H.264 MP4 file via ffmpeg subprocess.
+///
+/// Unlike encode_to_mp4 (which repeats one static frame), this function calls
+/// `frame_fn(frame_index)` once per frame to generate unique RGBA bytes for each frame.
+/// Frames are streamed directly to ffmpeg stdin — no memory accumulation.
+///
+/// frame_fn receives the 0-based frame index (u64). Scene time in seconds is
+/// computed by the caller as `frame_idx as f64 / fps as f64` before calling frame_fn.
+///
+/// Frames are written to ffmpeg stdin immediately after generation (streaming),
+/// not buffered — avoids OOM on long animations (research Pitfall 5).
+pub fn encode_to_mp4_animated<F>(
+    frame_fn: F,
+    total_frames: u64,
+    width: u32,
+    height: u32,
+    fps: u32,
+    output_path: &std::path::Path,
+) -> Result<(), EidosError>
+where
+    F: Fn(u64) -> Result<Vec<u8>, EidosError>,
+{
+    use std::io::Write;
+    use std::process::{Command, Stdio};
+
+    let output_str = output_path
+        .to_str()
+        .ok_or_else(|| EidosError::InvalidConfig("output path is not valid UTF-8".into()))?;
+
+    let mut child = Command::new("ffmpeg")
+        .args([
+            "-f", "rawvideo",
+            "-pix_fmt", "rgba",  // matches tiny-skia RGBA byte order (NOT bgra)
+            "-s", &format!("{}x{}", width, height),
+            "-r", &fps.to_string(),
+            "-i", "pipe:0",
+            "-pix_fmt", "yuv420p",
+            "-c:v", "libx264",
+            "-y",
+            output_str,
+        ])
+        .stdin(Stdio::piped())
+        .stderr(Stdio::null())
+        .spawn()
+        .map_err(|e| EidosError::RenderFailed(format!("failed to spawn ffmpeg: {}", e)))?;
+
+    {
+        let stdin = child
+            .stdin
+            .as_mut()
+            .ok_or_else(|| EidosError::RenderFailed("failed to open ffmpeg stdin".into()))?;
+
+        for frame_idx in 0..total_frames {
+            let rgba = frame_fn(frame_idx)?;
+            stdin.write_all(&rgba).map_err(|e| {
+                EidosError::RenderFailed(format!("failed to write frame to ffmpeg: {}", e))
+            })?;
+        }
+    }
+
+    drop(child.stdin.take());
+
+    let status = child
+        .wait()
+        .map_err(|e| EidosError::RenderFailed(format!("ffmpeg wait failed: {}", e)))?;
+
+    if !status.success() {
+        return Err(EidosError::RenderFailed(format!(
+            "ffmpeg exited with non-zero status: {}",
+            status
+        )));
+    }
+
+    Ok(())
+}
