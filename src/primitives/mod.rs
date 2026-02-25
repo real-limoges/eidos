@@ -1,21 +1,62 @@
 // src/primitives/mod.rs
-// Primitive types implemented in plans 01-03 and 01-04
-pub mod circle;
-pub mod rect;
-pub mod line;
 pub mod arrow;
-pub mod text;
 pub mod bezier;
+pub mod circle;
+pub mod line;
+pub mod rect;
+pub mod text;
 
-/// Enum over all primitive types for dispatch in the SVG pipeline.
-/// Individual struct fields are implemented in plans 01-03 (circle, rect, line, text)
-/// and 01-04 (arrow, bezier). The SVG conversion dispatch is completed in plan 01-05.
+pub use arrow::Arrow;
+pub use bezier::Bezier;
+pub use circle::Circle;
+pub use line::Line;
+pub use rect::Rect;
+pub use text::Text;
+
+/// The union of all drawable primitives.
+/// svg_gen::build_svg_document() matches on this enum to produce SVG nodes.
 #[derive(Debug, Clone)]
 pub enum Primitive {
-    Circle(circle::Circle),
-    Rect(rect::Rect),
-    Line(line::Line),
-    Arrow(arrow::Arrow),
-    Text(text::Text),
-    Bezier(bezier::Bezier),
+    Circle(Circle),
+    Rect(Rect),
+    Line(Line),
+    Arrow(Arrow),
+    Text(Text),
+    Bezier(Bezier),
+}
+
+impl From<Circle> for Primitive {
+    fn from(c: Circle) -> Self {
+        Primitive::Circle(c)
+    }
+}
+
+impl From<Rect> for Primitive {
+    fn from(r: Rect) -> Self {
+        Primitive::Rect(r)
+    }
+}
+
+impl From<Line> for Primitive {
+    fn from(l: Line) -> Self {
+        Primitive::Line(l)
+    }
+}
+
+impl From<Arrow> for Primitive {
+    fn from(a: Arrow) -> Self {
+        Primitive::Arrow(a)
+    }
+}
+
+impl From<Text> for Primitive {
+    fn from(t: Text) -> Self {
+        Primitive::Text(t)
+    }
+}
+
+impl From<Bezier> for Primitive {
+    fn from(b: Bezier) -> Self {
+        Primitive::Bezier(b)
+    }
 }
