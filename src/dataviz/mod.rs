@@ -1,6 +1,8 @@
 pub mod axes;
+pub mod confidence_band;
 pub mod data_curve;
 pub(crate) mod spline;
 
 pub use axes::{Axes, AxisRange};
+pub use confidence_band::ConfidenceBand;
 pub use data_curve::DataCurve;

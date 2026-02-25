@@ -3,6 +3,7 @@
 use crate::primitives::{Primitive, Line, Text, Bezier};
 use crate::Color;
 use crate::dataviz::DataCurve;
+use crate::dataviz::ConfidenceBand;
 
 const TICK_LENGTH: f64 = 6.0;
 const TICK_LABEL_OFFSET: f64 = 14.0;   // pixels from tick end to label center
@@ -40,6 +41,7 @@ pub struct Axes {
     pub x_title: Option<String>,
     pub y_title: Option<String>,
     pub curves: Vec<DataCurve>,
+    pub bands: Vec<ConfidenceBand>,
 }
 
 impl Axes {
@@ -52,6 +54,7 @@ impl Axes {
             x_title: None,
             y_title: None,
             curves: Vec::new(),
+            bands: Vec::new(),
         }
     }
 
@@ -85,14 +88,24 @@ impl Axes {
         self
     }
 
+    /// Attach a ConfidenceBand to this Axes. Rendered below data curves.
+    pub fn add_band(mut self, band: ConfidenceBand) -> Self {
+        self.bands.push(band);
+        self
+    }
+
     /// Decompose the Axes into constituent primitives for insertion into a SceneBuilder.
     ///
     /// Produces: axis lines (X, Y), tick marks, tick labels, grid lines, curve paths.
     /// Curves are converted to Bezier paths with Catmull-Rom spline in visual (pixel) space.
     pub fn to_primitives(&self) -> Vec<Primitive> {
         // --- Step 1: Resolve data ranges ---
-        let all_x: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.0)).collect();
-        let all_y: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.1)).collect();
+        let all_x: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.0))
+            .chain(self.bands.iter().flat_map(|b| b.upper_points.iter().chain(b.lower_points.iter()).map(|p| p.0)))
+            .collect();
+        let all_y: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.1))
+            .chain(self.bands.iter().flat_map(|b| b.upper_points.iter().chain(b.lower_points.iter()).map(|p| p.1)))
+            .collect();
 
         let (x_data_min, x_data_max) = compute_range(&all_x, AUTO_PADDING_FRAC);
         let (y_data_min, y_data_max) = compute_range(&all_y, AUTO_PADDING_FRAC);
@@ -230,6 +243,21 @@ impl Axes {
                     .expect("valid font size")
                     .into(),
             );
+        }
+
+        // --- Step 6.5: Confidence bands (rendered BELOW data curves) ---
+        for band in &self.bands {
+            if band.upper_points.len() < 2 || band.lower_points.len() < 2 { continue; }
+            let visual_upper: Vec<(f64, f64)> = band.upper_points.iter().map(|&(dx, dy)| {
+                (map_x(dx, x_axis_min, x_axis_max, self.x, self.width),
+                 map_y(dy, y_axis_min, y_axis_max, self.y, self.height))
+            }).collect();
+            let visual_lower: Vec<(f64, f64)> = band.lower_points.iter().map(|&(dx, dy)| {
+                (map_x(dx, x_axis_min, x_axis_max, self.x, self.width),
+                 map_y(dy, y_axis_min, y_axis_max, self.y, self.height))
+            }).collect();
+            let bez = band.to_bezier_path(&visual_upper, &visual_lower);
+            prims.push(bez.into());
         }
 
         // --- Step 7: Data curves ---
