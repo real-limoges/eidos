@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 2 of 4 (Animation Engine)
-Plan: 1 of 5 in current phase (plan 02-01 complete)
+Plan: 2 of 5 in current phase (plan 02-02 complete)
 Status: Active
-Last activity: 2026-02-25 -- Plan 02-01 complete: Easing + Tween<P> + *State structs, all 29 tests pass
+Last activity: 2026-02-25 -- Plan 02-02 complete: encode_to_mp4_animated(), Scene::render(f64), render_static()
 
-Progress: [██████░░░░] 30% (6/20 plans est.)
+Progress: [███████░░░] 35% (7/20 plans est.)
 
 ## Performance Metrics
 
@@ -37,6 +37,7 @@ Progress: [██████░░░░] 30% (6/20 plans est.)
 *Updated after each plan completion*
 | Phase 01-rendering-pipeline-and-primitives P05 | 30 | 3 tasks | 4 files |
 | Phase 02-animation-engine P01 | 5 | 1 commit | 10 files |
+| Phase 02-animation-engine P02 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -66,6 +67,8 @@ Recent decisions affecting current work:
 - [Phase 02-01]: LineState includes opacity field (Line struct has opacity; plan pseudocode omitted it)
 - [Phase 02-01]: Color channels in State structs are f64 (0.0..=255.0) — clamped+cast to u8 only at to_*() time; no arithmetic overflow
 - [Phase 02-01]: keyframe_derive #[derive(CanTween)] works cleanly on all four State structs (f64-only fields required)
+- [Phase 02-animation-engine]: encode_to_mp4_animated takes frame index (u64) not scene time; Scene::render() computes t_secs so svg_gen stays fps-agnostic
+- [Phase 02-animation-engine]: render_static() delegates to render() with |s, _t| wrapper — Phase 1 callers updated in 02-03, not here
 
 ### Pending Todos
 
@@ -79,5 +82,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 02-01-PLAN.md — animation foundation (Easing, Tween, State structs), keyframe crate integrated, all 29 tests pass
+Stopped at: Completed 02-02-PLAN.md — animated render pipeline (encode_to_mp4_animated, Scene::render with f64 time, render_static)
 Resume file: None

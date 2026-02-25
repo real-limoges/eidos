@@ -22,7 +22,7 @@
 ### Animation
 
 - [x] **ANIM-01**: User can animate any visual property (position, color, opacity, scale) between two states with easing functions
-- [ ] **ANIM-02**: User can compose multiple animations to run simultaneously (parallel composition)
+- [x] **ANIM-02**: User can compose multiple animations to run simultaneously (parallel composition)
 
 ### Data Visualization
 
@@ -85,7 +85,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRIM-05 | Phase 1 | Complete |
 | PRIM-06 | Phase 1 | Complete |
 | ANIM-01 | Phase 2 | Complete |
-| ANIM-02 | Phase 2 | Pending |
+| ANIM-02 | Phase 2 | Complete |
 | DATA-01 | Phase 3 | Pending |
 | DATA-02 | Phase 3 | Pending |
 | DATA-03 | Phase 3 | Pending |
