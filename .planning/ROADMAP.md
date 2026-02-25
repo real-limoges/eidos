@@ -13,7 +13,7 @@ Eidos goes from empty crate to animated GAM visualizations in four phases. Phase
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Rendering Pipeline and Primitives** - Static scenes with styled shapes rendered to MP4 video (completed 2026-02-25)
-- [ ] **Phase 2: Animation Engine** - Smooth property animation with easing and parallel composition
+- [x] **Phase 2: Animation Engine** - Smooth property animation with easing and parallel composition (completed 2026-02-25)
 - [ ] **Phase 3: Data Visualization** - Cartesian axes, data curves, and auto-ranging coordinate mapping
 - [ ] **Phase 4: GAM Visualization** - Confidence bands and animated spline fitting
 
@@ -87,6 +87,6 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Rendering Pipeline and Primitives | 5/5 | Complete   | 2026-02-25 |
-| 2. Animation Engine | 2/3 | In Progress|  |
+| 2. Animation Engine | 3/3 | Complete   | 2026-02-25 |
 | 3. Data Visualization | 0/0 | Not started | - |
 | 4. GAM Visualization | 0/0 | Not started | - |
