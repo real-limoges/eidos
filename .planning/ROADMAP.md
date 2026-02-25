@@ -84,7 +84,7 @@ Phases execute in numeric order: 1 -> 2 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Rendering Pipeline and Primitives | 2/5 | In Progress|  |
+| 1. Rendering Pipeline and Primitives | 3/5 | In Progress|  |
 | 2. Animation Engine | 0/0 | Not started | - |
 | 3. Data Visualization | 0/0 | Not started | - |
 | 4. GAM Visualization | 0/0 | Not started | - |

@@ -10,27 +10,27 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 1 of 4 (Rendering Pipeline and Primitives)
-Plan: 2 of 5 in current phase (plan 01-02 complete)
+Plan: 3 of 5 in current phase (plan 01-03 complete)
 Status: In progress
-Last activity: 2026-02-25 -- Plan 01-02 completed
+Last activity: 2026-02-25 -- Plan 01-03 completed
 
-Progress: [██░░░░░░░░] 10% (2/20 plans est.)
+Progress: [███░░░░░░░] 15% (3/20 plans est.)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 2
+- Total plans completed: 3
 - Average duration: 2 min
-- Total execution time: 0.07 hours
+- Total execution time: 0.10 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-rendering-pipeline-and-primitives | 2 | 4 min | 2 min |
+| 01-rendering-pipeline-and-primitives | 3 | 6 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (2 min)
+- Last 5 plans: 01-01 (2 min), 01-02 (2 min), 01-03 (2 min)
 - Trend: Consistent 2 min/plan
 
 *Updated after each plan completion*
@@ -51,6 +51,8 @@ Recent decisions affecting current work:
 - [01-01]: slotmap deferred to Phase 2 — not needed in Phase 1
 - [Phase 01-02]: fontdb stored as Arc<fontdb::Database> — resvg 0.47 Options.fontdb requires Arc, also enables cheap clone for Phase 2 multi-frame use
 - [Phase 01-02]: Primitive enum added in plan 01-02 (not 01-03) — needed for SceneBuilder and svg_gen dispatch to compile ahead of primitive struct implementations
+- [Phase 01-rendering-pipeline-and-primitives]: fill() returns Self (no validation); stroke()/opacity() return Result<Self, EidosError> (eager validation at call site)
+- [Phase 01-rendering-pipeline-and-primitives]: to_svg_element() returns concrete SVG node type (not boxed trait) for efficiency
 
 ### Pending Todos
 
@@ -64,5 +66,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 01-02-PLAN.md (Scene struct, render closure API, SVG/rasterize/ffmpeg pipeline)
+Stopped at: Completed 01-03-PLAN.md (Circle and Rect primitive builders with fill/stroke/opacity/to_svg_element)
 Resume file: None
