@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-25T14:42:57.461Z"
+last_updated: "2026-02-25T15:47:40.019Z"
 progress:
-  total_phases: 4
-  completed_phases: 3
-  total_plans: 13
-  completed_plans: 13
+  total_phases: 5
+  completed_phases: 5
+  total_plans: 14
+  completed_plans: 14
 ---
 
 # Project State
@@ -22,12 +22,12 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 
 ## Current Position
 
-Phase: 3 of 4 (Data Visualization)
-Plan: 3 of 3 in current phase (plan 03-03 complete — public API wire-up, data_plot example, human-verified MP4)
+Phase: 3.5 of 4 (Dataviz Tech Debt Cleanup — complete)
+Plan: 1 of 1 in current phase (plan 03.5-01 complete — removed unused import, added E2E render test, registered data_plot example)
 Status: Active
-Last activity: 2026-02-25 -- Plan 03-03 complete: lib.rs re-exports, SceneBuilder::add_axes(), data_plot example, 12 integration tests, human visual verification approved
+Last activity: 2026-02-25 -- Plan 03.5-01 complete: removed AxisRange unused import, added dataviz_render_produces_mp4 E2E test, Cargo.toml data_plot [[example]] block
 
-Progress: [█████████░] 65% (13/20 plans est.)
+Progress: [██████████] 70% (14/20 plans est.)
 
 ## Performance Metrics
 
@@ -58,6 +58,7 @@ Progress: [█████████░] 65% (13/20 plans est.)
 | Phase 03-data-visualization P01 | 2 | 1 task | 3 files |
 | Phase 03-data-visualization P02 | 3 | 1 tasks | 2 files |
 | Phase 03-data-visualization P03 | 10 | 3 tasks | 4 files |
+| Phase 03.5-dataviz-tech-debt-cleanup P01 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -100,6 +101,7 @@ Recent decisions affecting current work:
 - [Phase 03-02]: Grid lines use Bezier (opacity field via builder) not Line — Line has stroke_color/stroke_width but no combined stroke() method
 - [Phase 03-03]: SceneBuilder::add_axes() decomposes Axes via to_primitives() and pushes each primitive — no special axes node in scene graph, keeps rendering pipeline uniform
 - [Phase 03-03]: pub use dataviz::{Axes, AxisRange, DataCurve} added to lib.rs — dataviz types are first-class public API members
+- [Phase 03.5-01]: Local ffmpeg_available() defined in each integration test file rather than a shared module — accepted Rust pattern without tests/common/mod.rs
 
 ### Pending Todos
 
@@ -113,5 +115,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 03-03-PLAN.md — public API wire-up, data_plot example, 12 integration tests, human-verified MP4 output
+Stopped at: Completed 03.5-01-PLAN.md — removed unused AxisRange import, added dataviz_render_produces_mp4 E2E test, registered data_plot example in Cargo.toml
 Resume file: None
