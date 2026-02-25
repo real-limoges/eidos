@@ -5,36 +5,38 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API -- no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 1: Rendering Pipeline and Primitives
+**Current focus:** Phase 2: Animation Engine
 
 ## Current Position
 
-Phase: 1 of 4 (Rendering Pipeline and Primitives)
-Plan: 5 of 5 in current phase (plan 01-05 complete — Phase 1 DONE)
-Status: Phase 1 complete
-Last activity: 2026-02-25 -- Plan 01-05 color fix applied (bgra->rgba), all 25 tests pass, /tmp/basic_scene.mp4 re-generated
+Phase: 2 of 4 (Animation Engine)
+Plan: 1 of 5 in current phase (plan 02-01 complete)
+Status: Active
+Last activity: 2026-02-25 -- Plan 02-01 complete: Easing + Tween<P> + *State structs, all 29 tests pass
 
-Progress: [█████░░░░░] 25% (5/20 plans est.)
+Progress: [██████░░░░] 30% (6/20 plans est.)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 4
+- Total plans completed: 5
 - Average duration: 2 min
-- Total execution time: 0.12 hours
+- Total execution time: 0.14 hours
 
 **By Phase:**
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
 | 01-rendering-pipeline-and-primitives | 5 | 11 min | 2 min |
+| 02-animation-engine | 1 | 5 min | 5 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (2 min), 01-03 (2 min), 01-04 (3 min), 01-05 (2 min)
-- Trend: Consistent 2-3 min/plan
+- Last 5 plans: 01-02 (2 min), 01-03 (2 min), 01-04 (3 min), 01-05 (2 min), 02-01 (5 min)
+- Trend: Consistent 2-5 min/plan
 
 *Updated after each plan completion*
 | Phase 01-rendering-pipeline-and-primitives P05 | 30 | 3 tasks | 4 files |
+| Phase 02-animation-engine P01 | 5 | 1 commit | 10 files |
 
 ## Accumulated Context
 
@@ -60,6 +62,10 @@ Recent decisions affecting current work:
 - [Phase 01-05]: Arrow::to_svg_parts() called twice per arrow — acceptable for Phase 1 static scenes, cache in Phase 2 if needed
 - [Phase 01-05]: Integration test guards render path with ffmpeg_available() — CI portability without hard ffmpeg dependency
 - [Phase 01-rendering-pipeline-and-primitives]: tiny-skia Pixmap::data() returns RGBA (not BGRA) — ffmpeg -pix_fmt must be rgba to avoid R/B channel swap
+- [Phase 02-01]: EaseInOut at exactly t=0.5 returns same value as Linear (symmetric function property — not a bug); test uses t=0.25 quarter-point
+- [Phase 02-01]: LineState includes opacity field (Line struct has opacity; plan pseudocode omitted it)
+- [Phase 02-01]: Color channels in State structs are f64 (0.0..=255.0) — clamped+cast to u8 only at to_*() time; no arithmetic overflow
+- [Phase 02-01]: keyframe_derive #[derive(CanTween)] works cleanly on all four State structs (f64-only fields required)
 
 ### Pending Todos
 
@@ -73,5 +79,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 01-05-PLAN.md fully — color channel fix (bgra->rgba) applied, all tasks done, SUMMARY.md updated, Phase 1 complete
+Stopped at: Completed 02-01-PLAN.md — animation foundation (Easing, Tween, State structs), keyframe crate integrated, all 29 tests pass
 Resume file: None
