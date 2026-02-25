@@ -1,16 +1,128 @@
+//! SurfacePlot: a pure data container for a regular 3D grid surface.
+//!
+//! # Input format
+//! - `xs`, `ys`, `zs`: flat row-major vecs of length `rows * cols`
+//! - Element at grid position (row, col) is at index `row * cols + col`
+//!
+//! # Normalization
+//! Each axis is independently normalized to [-1, 1] world space at construction.
+//! This ensures data scale differences never affect the visual proportions of the surface.
+//! A flat surface (all z equal) maps all z values to 0.0 (center of [-1, 1]).
+//!
+//! # Axis labels and rendering config
+//! These are Phase 6 rendering concerns. SurfacePlot is pure data — no rendering logic here.
+
 use crate::dataviz::camera::Point3D;
 
-pub struct SurfacePlot { /* fields added in Task 2 */ }
+/// A regular-grid 3D surface, stored as normalized world-space vertices.
+///
+/// Construct from flat row-major coordinate arrays. Retrieve normalized vertices
+/// via [`SurfacePlot::world_point`] for use with [`crate::Camera::project_to_screen`].
+///
+/// ```
+/// use eidos::SurfacePlot;
+///
+/// let xs = vec![0.0, 1.0, 2.0];
+/// let ys = vec![0.0, 0.0, 0.0];
+/// let zs = vec![0.0, 0.5, 1.0];
+/// let plot = SurfacePlot::new(xs, ys, zs, 1, 3);
+/// let p = plot.world_point(0, 0);
+/// assert!((p.x - (-1.0)).abs() < 1e-10); // x_min normalizes to -1
+/// ```
+#[derive(Debug, Clone)]
+pub struct SurfacePlot {
+    rows: usize,
+    cols: usize,
+    /// Normalized world-space vertices in row-major order.
+    /// Index: row * cols + col
+    world_vertices: Vec<Point3D>,
+}
 
 impl SurfacePlot {
-    pub fn new(_xs: Vec<f64>, _ys: Vec<f64>, _zs: Vec<f64>, _rows: usize, _cols: usize) -> Self {
-        todo!()
+    /// Construct a SurfacePlot from flat row-major coordinate arrays.
+    ///
+    /// # Panics
+    /// Panics with a clear message if `xs.len()`, `ys.len()`, or `zs.len()` != `rows * cols`.
+    ///
+    /// # Normalization
+    /// Each axis is independently normalized to [-1, 1]. A degenerate axis
+    /// (all values equal) maps to 0.0.
+    pub fn new(xs: Vec<f64>, ys: Vec<f64>, zs: Vec<f64>, rows: usize, cols: usize) -> Self {
+        let n = rows * cols;
+        assert_eq!(
+            xs.len(), n,
+            "xs.len() ({}) != rows * cols ({}*{}={})",
+            xs.len(), rows, cols, n
+        );
+        assert_eq!(
+            ys.len(), n,
+            "ys.len() ({}) != rows * cols ({}*{}={})",
+            ys.len(), rows, cols, n
+        );
+        assert_eq!(
+            zs.len(), n,
+            "zs.len() ({}) != rows * cols ({}*{}={})",
+            zs.len(), rows, cols, n
+        );
+
+        let world_vertices = normalize_to_world_space(&xs, &ys, &zs);
+        SurfacePlot { rows, cols, world_vertices }
     }
-    pub fn world_point(&self, _row: usize, _col: usize) -> Point3D {
-        todo!()
+
+    /// Returns the normalized world-space point at grid position (row, col).
+    ///
+    /// # Panics
+    /// Panics if row >= self.rows() or col >= self.cols().
+    pub fn world_point(&self, row: usize, col: usize) -> Point3D {
+        self.world_vertices[row * self.cols + col]
     }
-    pub fn rows(&self) -> usize { todo!() }
-    pub fn cols(&self) -> usize { todo!() }
+
+    /// Number of rows in the grid.
+    pub fn rows(&self) -> usize {
+        self.rows
+    }
+
+    /// Number of columns in the grid.
+    pub fn cols(&self) -> usize {
+        self.cols
+    }
+}
+
+/// Normalize all three coordinate arrays independently to [-1, 1] world space.
+fn normalize_to_world_space(xs: &[f64], ys: &[f64], zs: &[f64]) -> Vec<Point3D> {
+    let (x_min, x_max) = min_max(xs);
+    let (y_min, y_max) = min_max(ys);
+    let (z_min, z_max) = min_max(zs);
+
+    xs.iter()
+        .zip(ys.iter())
+        .zip(zs.iter())
+        .map(|((x, y), z)| Point3D {
+            x: normalize(*x, x_min, x_max),
+            y: normalize(*y, y_min, y_max),
+            z: normalize(*z, z_min, z_max),
+        })
+        .collect()
+}
+
+/// Compute the min and max of a slice.
+fn min_max(vals: &[f64]) -> (f64, f64) {
+    let lo = vals.iter().cloned().fold(f64::INFINITY, f64::min);
+    let hi = vals.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+    (lo, hi)
+}
+
+/// Normalize a value from [lo, hi] to [-1, 1].
+///
+/// Degenerate range (hi ≈ lo): returns 0.0 (center of [-1, 1]).
+/// This handles flat surfaces where all z values are equal.
+fn normalize(v: f64, lo: f64, hi: f64) -> f64 {
+    let span = hi - lo;
+    if span.abs() < 1e-12 {
+        0.0
+    } else {
+        2.0 * (v - lo) / span - 1.0
+    }
 }
 
 #[cfg(test)]
