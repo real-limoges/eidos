@@ -13,3 +13,7 @@ keyframe_derive = "1.0"
 [[example]]
 name = "basic_scene"
 path = "examples/basic_scene.rs"
+
+[[example]]
+name = "animated_scene"
+path = "examples/animated_scene.rs"

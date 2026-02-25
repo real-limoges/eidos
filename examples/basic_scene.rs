@@ -11,7 +11,7 @@ use eidos::primitives::{
 fn main() -> Result<(), eidos::EidosError> {
     let scene = Scene::new(1920, 1080, 30)?.duration(2.0);
 
-    scene.render(|s| {
+    scene.render_static(|s| {
         // Circle: center at (300, 300), radius 150, red fill, white stroke
         s.add(
             Circle::new(300.0, 300.0, 150.0)
