@@ -14,6 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Rendering Pipeline and Primitives** - Static scenes with styled shapes rendered to MP4 video (completed 2026-02-25)
 - [x] **Phase 2: Animation Engine** - Smooth property animation with easing and parallel composition (completed 2026-02-25)
+- [ ] **Phase 2.5: Tech Debt Cleanup** (INSERTED) - Close v1.0 audit tech debt: dead code removal, LineState/TextState example coverage, formal Phase 1 verification record
 - [ ] **Phase 3: Data Visualization** - Cartesian axes, data curves, and auto-ranging coordinate mapping
 - [ ] **Phase 4: GAM Visualization** - Confidence bands and animated spline fitting
 
@@ -52,6 +53,20 @@ Plans:
 - [ ] 02-02-PLAN.md — Render pipeline upgrade: encode_to_mp4_animated(), Scene::render(t), render_static() backward-compat wrapper
 - [ ] 02-03-PLAN.md — Wire-up: fix Phase 1 callers, animated_scene example, Phase 2 integration tests + human verification
 
+### Phase 2.5: Tech Debt Cleanup
+**Goal**: Resolve the 3 low-severity tech debt items surfaced by the v1.0 audit before Phase 3 begins
+**Depends on**: Phase 2
+**Requirements**: None (housekeeping — no new requirements)
+**Gap Closure:** Closes tech debt from audit
+**Success Criteria** (what must be TRUE):
+  1. `svg_gen::encode_to_mp4` is removed or deprecated with a clear doc comment explaining why `encode_to_mp4_animated` is the preferred path
+  2. `LineState` and `TextState` each appear in at least one integration test and the `animated_scene` example (or a new example)
+  3. `01-VERIFICATION.md` status is updated to `passed` after formal visual playback confirmation of `basic_scene.mp4`
+**Plans**: TBD
+
+Plans:
+- [ ] 02.5-01: TBD
+
 ### Phase 3: Data Visualization
 **Goal**: Users can create publication-quality 2D data plots with axes, smooth curves from data points, and automatic axis scaling
 **Depends on**: Phase 2
@@ -82,11 +97,12 @@ Plans:
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 3 -> 4
+Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 4
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Rendering Pipeline and Primitives | 5/5 | Complete   | 2026-02-25 |
 | 2. Animation Engine | 3/3 | Complete   | 2026-02-25 |
+| 2.5. Tech Debt Cleanup | 0/0 | Not started | - |
 | 3. Data Visualization | 0/0 | Not started | - |
 | 4. GAM Visualization | 0/0 | Not started | - |
