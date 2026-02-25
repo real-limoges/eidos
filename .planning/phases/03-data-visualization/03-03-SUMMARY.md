@@ -18,7 +18,7 @@ provides:
   - eidos::Axes, eidos::AxisRange, eidos::DataCurve at crate root via lib.rs re-exports
   - SceneBuilder::add_axes(&Axes) -> &mut Self convenience method in scene.rs
   - data_plot example rendering sine+cosine curves on shared axes to MP4
-  - 12 integration tests covering DATA-01, DATA-02, DATA-03
+  - 11 integration tests covering DATA-01, DATA-02, DATA-03
   - Human-verified MP4 output confirming correct Y-axis orientation, tick legibility, smooth curves
 affects:
   - 04-gam-visualization
@@ -72,7 +72,7 @@ completed: 2026-02-25
 - Wired `pub mod dataviz` and `pub use dataviz::{Axes, AxisRange, DataCurve}` into `src/lib.rs`, making all three data visualization types part of the crate's public API
 - Added `SceneBuilder::add_axes()` to `src/scene.rs`, which decomposes an `&Axes` into constituent primitives via `to_primitives()` and appends each to the scene
 - Created `examples/data_plot.rs` rendering sine and cosine curves (cyan and orange) on shared auto-ranged axes to `/tmp/data_plot.mp4`
-- Created `tests/data_viz.rs` with 12 integration tests covering DATA-01 (axes structure), DATA-02 (multi-curve composition), and DATA-03 (auto-range and degenerate data edge cases)
+- Created `tests/data_viz.rs` with 11 integration tests covering DATA-01 (axes structure), DATA-02 (multi-curve composition), and DATA-03 (auto-range and degenerate data edge cases)
 - Human visual verification confirmed: dark background, X/Y axis lines, tick marks with legible numeric labels, subtle grid lines, smooth CYAN sine curve, smooth ORANGE cosine curve, correct positive-up Y-axis orientation, and visible axis titles
 
 ## Task Commits
@@ -88,7 +88,7 @@ Each task was committed atomically:
 - `src/lib.rs` - Added `pub mod dataviz;` and `pub use dataviz::{Axes, AxisRange, DataCurve};` re-exports
 - `src/scene.rs` - Added `SceneBuilder::add_axes(&Axes) -> &mut Self` convenience method
 - `examples/data_plot.rs` - New example: sine+cosine on shared auto-ranged axes, outputs `/tmp/data_plot.mp4`
-- `tests/data_viz.rs` - New integration test file: 12 tests for DATA-01, DATA-02, DATA-03
+- `tests/data_viz.rs` - New integration test file: 11 tests for DATA-01, DATA-02, DATA-03
 
 ## Decisions Made
 
