@@ -118,7 +118,7 @@ impl Scene {
 
         // Rasterize once — for static Phase 1 scenes all frames are identical
         // Phase 2 will rasterize a different frame per animation step
-        let bgra_frame = crate::svg_gen::rasterize_frame(
+        let rgba_frame = crate::svg_gen::rasterize_frame(
             &svg_string,
             self.width,
             self.height,
@@ -130,7 +130,7 @@ impl Scene {
 
         // Encode to H.264 MP4 via ffmpeg subprocess
         crate::svg_gen::encode_to_mp4(
-            &bgra_frame,
+            &rgba_frame,
             total_frames,
             self.width,
             self.height,

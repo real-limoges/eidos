@@ -62,11 +62,14 @@ pub fn build_svg_document(
     doc.to_string()
 }
 
-/// Rasterize an SVG string to BGRA8 pixel bytes using resvg + tiny-skia.
+/// Rasterize an SVG string to RGBA8 pixel bytes using resvg + tiny-skia.
 ///
 /// The `fontdb` parameter must already have Noto Sans loaded (done in Scene::new()).
 /// A new fontdb is NOT created here — passing it as an Arc avoids per-frame font loading.
 /// The fontdb is set on `Options.fontdb` which is how resvg 0.47 expects it to be supplied.
+///
+/// Note: tiny-skia Pixmap::data() returns RGBA byte order (per tiny-skia source docs).
+/// The ffmpeg input format must be set to "rgba" to match — NOT "bgra".
 pub fn rasterize_frame(
     svg_str: &str,
     width: u32,
@@ -87,21 +90,21 @@ pub fn rasterize_frame(
 
     resvg::render(&tree, tiny_skia::Transform::identity(), &mut pixmap.as_mut());
 
-    Ok(pixmap.data().to_vec()) // BGRA8 bytes
+    Ok(pixmap.data().to_vec()) // RGBA8 bytes (tiny-skia Pixmap::data() is RGBA, not BGRA)
 }
 
-/// Encode raw BGRA frames to an H.264 MP4 file via ffmpeg subprocess.
+/// Encode raw RGBA frames to an H.264 MP4 file via ffmpeg subprocess.
 ///
-/// The same `bgra_frame` is written `total_frames` times for Phase 1 static scenes.
+/// The same `rgba_frame` is written `total_frames` times for Phase 1 static scenes.
 /// Phase 2 will instead supply a different frame per animation step.
 ///
-/// Uses "-pix_fmt bgra" (not rgba) because tiny-skia Pixmap::data() returns BGRA byte order
-/// (research Pitfall 2 — confusing rgba/bgra causes color channel corruption).
+/// Uses "-pix_fmt rgba" because tiny-skia Pixmap::data() returns RGBA byte order.
+/// Using "bgra" here would swap R and B channels, causing wrong colors in the output video.
 ///
 /// stdin is explicitly dropped before wait() so ffmpeg receives EOF and finalizes the file.
 /// Forgetting to close stdin causes ffmpeg to block indefinitely waiting for more input.
 pub fn encode_to_mp4(
-    bgra_frame: &[u8],
+    rgba_frame: &[u8],
     total_frames: u64,
     width: u32,
     height: u32,
@@ -120,7 +123,7 @@ pub fn encode_to_mp4(
             "-f",
             "rawvideo",
             "-pix_fmt",
-            "bgra", // matches tiny-skia Pixmap::data() byte order — NOT rgba (Pitfall 2)
+            "rgba", // matches tiny-skia Pixmap::data() byte order — NOT bgra
             "-s",
             &format!("{}x{}", width, height),
             "-r",
@@ -148,7 +151,7 @@ pub fn encode_to_mp4(
         // Write the same static frame total_frames times.
         // Phase 2 will write a different frame for each animation step.
         for _ in 0..total_frames {
-            stdin.write_all(bgra_frame).map_err(|e| {
+            stdin.write_all(rgba_frame).map_err(|e| {
                 EidosError::RenderFailed(format!("failed to write frame to ffmpeg: {}", e))
             })?;
         }
