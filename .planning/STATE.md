@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API -- no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 2.5: Tech Debt Cleanup
+**Current focus:** Phase 3: Data Visualization
 
 ## Current Position
 
-Phase: 2.5 of 4 (Tech Debt Cleanup)
-Plan: 2 of 2 in current phase (plan 02.5-02 complete — Phase 2.5 done)
+Phase: 3 of 4 (Data Visualization)
+Plan: 1 of 3 in current phase (plan 03-01 complete — DataCurve struct with Catmull-Rom spline)
 Status: Active
-Last activity: 2026-02-25 -- Plan 02.5-02 complete: 01-VERIFICATION.md updated to status: passed, Phase 2.5 tech debt cleanup complete
+Last activity: 2026-02-25 -- Plan 03-01 complete: DataCurve struct and Catmull-Rom spline algorithm implemented
 
 Progress: [████████░░] 45% (9/20 plans est.)
 
@@ -55,6 +55,7 @@ Progress: [████████░░] 45% (9/20 plans est.)
 | Phase 02-animation-engine P03 | 5 | 3 tasks | 4 files |
 | Phase 02.5-tech-debt-cleanup P01 | 2 | 2 tasks | 3 files |
 | Phase 02.5-tech-debt-cleanup P02 | 5 | 2 tasks | 1 files |
+| Phase 03-data-visualization P01 | 2 | 1 task | 3 files |
 
 ## Accumulated Context
 
@@ -90,6 +91,9 @@ Recent decisions affecting current work:
 - [Phase 02.5-01]: #[allow(dead_code)] paired with #[deprecated] on encode_to_mp4 — suppresses unused warning while communicating deprecation; removal deferred to Phase 3
 - [Phase 02.5-01]: LineState and TextState use submodule import paths (eidos::primitives::line::LineState) — primitives/mod.rs does not re-export State types
 - [Phase 02.5-tech-debt-cleanup]: Human visual confirmation gates applied: 01-VERIFICATION.md updated only after user typed approved for all 10 visual criteria
+- [Phase 03-01]: pub mod dataviz added to lib.rs in Plan 01 (not Plan 03) — required for cargo test --lib to discover tests; pub use re-export deferred to Plan 03
+- [Phase 03-01]: to_bezier_path() takes visual_points parameter — caller maps data to pixel space; Catmull-Rom tangents must be computed in visual space for correct curve shape with asymmetric axes
+- [Phase 03-01]: Phantom endpoint duplication chosen over clamped tangent boundary — produces smoother visuals at first/last spline point
 
 ### Pending Todos
 
@@ -103,5 +107,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 02.5-02-PLAN.md — 01-VERIFICATION.md updated to status: passed after human visual confirmation of basic_scene.mp4
+Stopped at: Completed 03-01-PLAN.md — DataCurve struct with Catmull-Rom spline, 7 unit tests pass, zero warnings
 Resume file: None
