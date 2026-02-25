@@ -37,6 +37,7 @@ key-decisions:
   - "Arrow::to_svg_parts() called twice per arrow (once for defs, once for line) — acceptable for Phase 1 static scenes"
   - "Integration test skips render when ffmpeg unavailable — enables CI without ffmpeg dependency"
   - "basic_scene uses Bezier (not BezierPath) matching actual enum variant name"
+  - "tiny-skia Pixmap::data() returns RGBA (not BGRA) — ffmpeg -pix_fmt must be rgba to avoid R/B channel swap"
 
 patterns-established:
   - "Two-pass SVG construction: collect defs first, then add shape nodes — ensures url(#id) references are never unresolved"
@@ -45,21 +46,21 @@ patterns-established:
 requirements-completed: [CORE-01, CORE-02, PRIM-01, PRIM-02, PRIM-03, PRIM-04, PRIM-05, PRIM-06]
 
 # Metrics
-duration: 2min
+duration: 30min
 completed: 2026-02-25
 ---
 
 # Phase 1 Plan 05: SVG Dispatch Integration and Phase 1 End-to-End Summary
 
-**Complete build_svg_document() dispatch wiring all 6 primitives into the SVG/rasterize/MP4 pipeline, plus a runnable basic_scene example and integration test suite**
+**All 6 primitives wired through svg_gen dispatch with verified MP4 output — R/B color channel swap fixed by correcting tiny-skia pixel format from bgra to rgba**
 
 ## Performance
 
-- **Duration:** 2 min
+- **Duration:** ~30 min (including human verification checkpoint and color fix)
 - **Started:** 2026-02-25T05:47:39Z
-- **Completed:** 2026-02-25T05:49:39Z
-- **Tasks:** 2 automated + 1 human-verify checkpoint
-- **Files modified:** 3
+- **Completed:** 2026-02-25
+- **Tasks:** 3 (2 automated + 1 human-verify with color fix)
+- **Files modified:** 4
 
 ## Accomplishments
 - Replaced all 6 TODO stubs in build_svg_document() with real dispatches — Circle, Rect, Line, Arrow, Text, Bezier all produce correct SVG nodes
@@ -74,16 +75,19 @@ Each task was committed atomically:
 
 1. **Task 1: Complete svg_gen dispatch for all 6 primitive types** - `d96b3d4` (feat)
 2. **Task 2: Create basic_scene example and integration test** - `00ed76e` (feat)
+3. **Color channel fix: pixel format bgra -> rgba** - `73523e8` (fix)
 
 ## Files Created/Modified
-- `src/svg_gen.rs` - build_svg_document() with complete 6-variant dispatch and two-pass Arrow ordering
+- `src/svg_gen.rs` - build_svg_document() with complete 6-variant dispatch and two-pass Arrow ordering; fixed pixel format from bgra to rgba
+- `src/scene.rs` - variable rename bgra_frame -> rgba_frame for accuracy
 - `examples/basic_scene.rs` - runnable demo of all Phase 1 primitives (Circle, Rect, Line, Arrow, Text, Bezier)
 - `tests/integration.rs` - 3 integration tests: render pipeline, odd-dimension validation, zero-fps validation
 
 ## Decisions Made
 - Arrow::to_svg_parts() is called twice per arrow (once for defs in pass 1, once for the line element in pass 2). This is acceptable for Phase 1 — scenes are static, build_svg_document() is called once per render. Phase 2 can cache SVG parts on Arrow if needed.
-- The integration test guards the render path with ffmpeg_available() so it skips cleanly in environments without ffmpeg (no ffmpeg was available in this environment — test verified skip behavior).
+- The integration test guards the render path with ffmpeg_available() so it skips cleanly in environments without ffmpeg.
 - basic_scene.rs uses `Bezier` (not `BezierPath` as the plan pseudocode suggested) — matches the actual Primitive enum variant and mod.rs export established in plans 01-03/01-04.
+- tiny-skia `Pixmap::data()` returns RGBA byte order (not BGRA). The original research note "Pitfall 2" was incorrect. Verified by reading the tiny-skia 0.12.0 source (`src/pixmap.rs`): both `data()` and `data_mut()` explicitly document "Byteorder: RGBA". Using `bgra` in ffmpeg swapped R and B channels globally.
 
 ## Deviations from Plan
 
@@ -97,21 +101,33 @@ Each task was committed atomically:
 - **Verification:** cargo build --example basic_scene succeeds
 - **Committed in:** 00ed76e (Task 2 commit)
 
+**2. [Rule 1 - Bug] Fixed R/B channel swap in MP4 output by correcting ffmpeg pixel format from bgra to rgba**
+- **Found during:** Task 3 (human verification — circle appeared blue, rect appeared red)
+- **Issue:** `rasterize_frame()` used BGRA format assumption from research notes (Pitfall 2), but tiny-skia 0.12.0 `Pixmap::data()` actually returns RGBA byte order. Using `-pix_fmt bgra` in ffmpeg caused the red circle to appear blue, the blue rect to appear red, the yellow arrow to appear cyan, and the cyan bezier to appear greenish/yellow.
+- **Fix:** Changed ffmpeg `-pix_fmt` from `bgra` to `rgba`. Updated comments and variable names in `svg_gen.rs` and `scene.rs` to accurately describe RGBA format.
+- **Files modified:** src/svg_gen.rs, src/scene.rs
+- **Verification:** Rebuilt and re-ran `cargo run --example basic_scene`. All 25 tests pass. New MP4 at /tmp/basic_scene.mp4 ready for re-verification.
+- **Committed in:** 73523e8 (fix(01-05))
+
 ---
 
-**Total deviations:** 1 auto-fixed (1 naming bug from plan pseudocode mismatch)
-**Impact on plan:** No scope creep. Fix was necessary for compilation.
+**Total deviations:** 2 auto-fixed (1 naming bug, 1 pixel format bug)
+**Impact on plan:** Both fixes necessary for correctness. The pixel format fix was the root cause of the user-reported color issues. No scope creep.
 
 ## Issues Encountered
-- ffmpeg not available in execution environment — integration test correctly skipped render path via ffmpeg_available() guard; all other tests passed normally.
+- Research note "Pitfall 2" in 01-RESEARCH.md incorrectly claimed tiny-skia Pixmap::data() returns BGRA. Verified the truth by reading tiny-skia 0.12.0 source directly. This caused visible color corruption in MP4 output detected during human verification checkpoint.
 
 ## User Setup Required
 None - no external service configuration required.
 
 ## Next Phase Readiness
 - Phase 1 rendering pipeline is complete: all 6 primitives (Circle, Rect, Line, Arrow, Text, Bezier) wire through SVG generation, resvg rasterization, and ffmpeg MP4 encoding
-- Awaiting human verification of /tmp/basic_scene.mp4 output (Task 3 checkpoint)
+- Color channel bug fixed — re-generated /tmp/basic_scene.mp4 is ready for final visual confirmation
 - Phase 2 (animation) can build on SceneBuilder, Scene::render(), and the Primitive enum dispatch
+
+Concerns carried forward:
+- SVG-per-frame performance is unvalidated — benchmark early in Phase 2
+- Font handling may need bundled font for cross-platform consistency (Phase 3)
 
 ---
 *Phase: 01-rendering-pipeline-and-primitives*

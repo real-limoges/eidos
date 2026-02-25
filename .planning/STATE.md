@@ -10,9 +10,9 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 1 of 4 (Rendering Pipeline and Primitives)
-Plan: 5 of 5 in current phase (plan 01-05 complete — awaiting human-verify checkpoint)
-Status: In progress
-Last activity: 2026-02-25 -- Plan 01-05 completed (awaiting human verify)
+Plan: 5 of 5 in current phase (plan 01-05 complete — Phase 1 DONE)
+Status: Phase 1 complete
+Last activity: 2026-02-25 -- Plan 01-05 color fix applied (bgra->rgba), all 25 tests pass, /tmp/basic_scene.mp4 re-generated
 
 Progress: [█████░░░░░] 25% (5/20 plans est.)
 
@@ -34,6 +34,7 @@ Progress: [█████░░░░░] 25% (5/20 plans est.)
 - Trend: Consistent 2-3 min/plan
 
 *Updated after each plan completion*
+| Phase 01-rendering-pipeline-and-primitives P05 | 30 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -58,6 +59,7 @@ Recent decisions affecting current work:
 - [Phase 01-rendering-pipeline-and-primitives]: Bezier named to match mod.rs export and Primitive enum variant (not BezierPath as in plan pseudocode)
 - [Phase 01-05]: Arrow::to_svg_parts() called twice per arrow — acceptable for Phase 1 static scenes, cache in Phase 2 if needed
 - [Phase 01-05]: Integration test guards render path with ffmpeg_available() — CI portability without hard ffmpeg dependency
+- [Phase 01-rendering-pipeline-and-primitives]: tiny-skia Pixmap::data() returns RGBA (not BGRA) — ffmpeg -pix_fmt must be rgba to avoid R/B channel swap
 
 ### Pending Todos
 
@@ -71,5 +73,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 01-05-PLAN.md (SVG dispatch wiring, basic_scene example, integration tests — awaiting Task 3 human-verify checkpoint)
+Stopped at: Completed 01-05-PLAN.md fully — color channel fix (bgra->rgba) applied, all tasks done, SUMMARY.md updated, Phase 1 complete
 Resume file: None
