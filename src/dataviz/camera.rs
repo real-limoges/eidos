@@ -1,6 +1,16 @@
-/// Camera and 3D projection types for the eidos surface visualization system.
-///
-/// Stubs only — implementation added in Task 3 (GREEN phase).
+//! Camera and 3D projection types for the eidos surface visualization system.
+//!
+//! # Coordinate conventions
+//! - Z is the up-axis. The surface sits in the XY plane.
+//! - Camera orbits above the XY plane using spherical coordinates (azimuth, elevation, distance).
+//! - Angles are specified in degrees in the public API; internally converted to radians.
+//! - World space is normalized to [-1, 1] per axis at SurfacePlot construction time.
+//!
+//! # Public API
+//! Only [`Camera::project_to_screen`] and [`Camera::is_face_visible`] are public math operations.
+//! The view matrix and all nalgebra internals are private.
+
+use nalgebra::{Isometry3, Matrix4, Perspective3, Point3 as NaPoint3, Vector3 as NaVec3};
 
 /// A point in 3D world space.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -11,6 +21,10 @@ pub struct Point3D {
 }
 
 /// A 3D direction vector (not normalized by default).
+///
+/// Used for face normals in [`Camera::is_face_visible`].
+/// Convention: normals must point **outward** from the surface face (toward the front/visible side).
+/// For a horizontal face in the XY plane visible from above, the outward normal is (0, 0, +1).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Vector3D {
     pub x: f64,
@@ -19,6 +33,8 @@ pub struct Vector3D {
 }
 
 /// A projected 2D screen point in SVG pixel coordinates.
+///
+/// Origin (0, 0) is the top-left corner. Y increases downward (SVG convention).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Point2D {
     pub x: f64,
@@ -26,17 +42,126 @@ pub struct Point2D {
 }
 
 /// A perspective camera defined by spherical coordinates.
-pub struct Camera { /* fields added in Task 3 */ }
+///
+/// Constructed once, projects many points. Immutable after construction.
+///
+/// # Example
+/// ```
+/// use eidos::Camera;
+/// use eidos::dataviz::camera::{Point3D, Point2D};
+///
+/// let cam = Camera::new(45.0, 30.0, 3.0);
+/// let origin = Point3D { x: 0.0, y: 0.0, z: 0.0 };
+/// if let Some(screen_pt) = cam.project_to_screen(origin, (800, 600)) {
+///     println!("origin projects to ({:.1}, {:.1})", screen_pt.x, screen_pt.y);
+/// }
+/// ```
+#[derive(Debug, Clone)]
+pub struct Camera {
+    /// Azimuth angle in degrees (0° = camera on +Y axis looking toward origin).
+    pub azimuth_deg: f64,
+    /// Elevation angle in degrees (0° = horizontal, 90° = directly above).
+    /// Clamped to [-89.9, 89.9] to prevent degenerate look_at_rh.
+    pub elevation_deg: f64,
+    /// Camera distance from origin in normalized world-space units (~3.0 sees the full unit cube).
+    pub distance: f64,
+    // Private: precomputed view matrix (viewport-independent).
+    // Perspective projection is applied per-call in project_to_screen (needs aspect ratio).
+    view: Matrix4<f64>,
+    // Eye position in world space. Used for is_face_visible dot product.
+    eye: NaVec3<f64>,
+}
 
 impl Camera {
-    pub fn new(_azimuth_deg: f64, _elevation_deg: f64, _distance: f64) -> Self {
-        todo!()
+    /// Create a camera at the given spherical position looking at the world origin.
+    ///
+    /// - `azimuth_deg`: horizontal rotation in degrees (0° = +Y axis)
+    /// - `elevation_deg`: vertical angle above the XY plane in degrees; clamped to [-89.9, 89.9]
+    /// - `distance`: distance from origin in world-space units
+    ///
+    /// Defaults from CONTEXT.md: azimuth=45°, elevation=30°, distance=3.0.
+    pub fn new(azimuth_deg: f64, elevation_deg: f64, distance: f64) -> Self {
+        // Clamp elevation to avoid degenerate look_at_rh (eye collinear with up vector at ±90°)
+        let clamped_elevation = elevation_deg.clamp(-89.9, 89.9);
+        let el = clamped_elevation.to_radians();
+        let az = azimuth_deg.to_radians();
+
+        // Z-up spherical to Cartesian (Z is the up-axis per CONTEXT.md):
+        //   eye_x = distance * cos(el) * sin(az)
+        //   eye_y = distance * cos(el) * cos(az)
+        //   eye_z = distance * sin(el)
+        let eye = NaVec3::new(
+            distance * el.cos() * az.sin(),
+            distance * el.cos() * az.cos(),
+            distance * el.sin(),
+        );
+
+        // look_at_rh: right-hand coordinate system, Z is up (not Y — matches CONTEXT.md Z-up convention)
+        let view = Isometry3::look_at_rh(
+            &NaPoint3::from(eye),
+            &NaPoint3::origin(),
+            &NaVec3::z(), // Z is up — CRITICAL: not Vector3::y() (that is Y-up / OpenGL convention)
+        )
+        .to_homogeneous();
+
+        Camera {
+            azimuth_deg,
+            elevation_deg: clamped_elevation,
+            distance,
+            view,
+            eye,
+        }
     }
-    pub fn project_to_screen(&self, _point: Point3D, _viewport: (u32, u32)) -> Option<Point2D> {
-        todo!()
+
+    /// Project a world-space point to SVG pixel coordinates.
+    ///
+    /// Returns `None` if the point is behind the near plane (not visible from the camera).
+    /// The caller is responsible for skipping `None` points during rendering.
+    ///
+    /// Uses a 45° vertical field-of-view and near/far planes of 0.1 and 100.0.
+    pub fn project_to_screen(&self, point: Point3D, viewport: (u32, u32)) -> Option<Point2D> {
+        let (vw, vh) = viewport;
+        let aspect = vw as f64 / vh as f64;
+
+        // Perspective projection with viewport-dependent aspect ratio (not cached — viewport varies)
+        let proj = Perspective3::new(aspect, 45_f64.to_radians(), 0.1, 100.0);
+
+        // Transform world-space point to view space using precomputed view matrix
+        let p_world = NaPoint3::new(point.x, point.y, point.z);
+        let p_view = self.view.transform_point(&p_world);
+
+        // Right-hand convention: points behind camera have z >= 0 in view space
+        if p_view.z >= 0.0 {
+            return None;
+        }
+
+        // Project view-space point to NDC [-1, 1]
+        let p_ndc = proj.project_point(&p_view);
+
+        // NDC to SVG pixel coordinates
+        // X: NDC [-1,1] → [0, width]
+        // Y: NDC [-1,1] top=+1 → SVG Y-down: py = (1 - ndc_y) * 0.5 * height
+        let px = (p_ndc.x + 1.0) * 0.5 * vw as f64;
+        let py = (1.0 - p_ndc.y) * 0.5 * vh as f64; // Y-flip: SVG is Y-down
+
+        Some(Point2D { x: px, y: py })
     }
-    pub fn is_face_visible(&self, _face_normal: Vector3D) -> bool {
-        todo!()
+
+    /// Returns `true` if the face with the given outward normal is visible from this camera.
+    ///
+    /// Uses a dot-product backface culling test. The face is visible when its outward normal
+    /// has a positive component toward the camera eye position.
+    ///
+    /// **Normal convention:** `face_normal` must point outward from the surface face (away from
+    /// the interior, toward the front face). For a horizontal face in the XY plane visible
+    /// from above, the outward normal is (0, 0, +1).
+    pub fn is_face_visible(&self, face_normal: Vector3D) -> bool {
+        // Dot product of face normal with camera eye direction (from origin toward eye)
+        // dot > 0 means normal points toward the camera (face is front-facing → visible)
+        let dot = face_normal.x * self.eye.x
+            + face_normal.y * self.eye.y
+            + face_normal.z * self.eye.z;
+        dot > 0.0
     }
 }
 
