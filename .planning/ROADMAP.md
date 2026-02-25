@@ -62,10 +62,11 @@ Plans:
   1. `svg_gen::encode_to_mp4` is removed or deprecated with a clear doc comment explaining why `encode_to_mp4_animated` is the preferred path
   2. `LineState` and `TextState` each appear in at least one integration test and the `animated_scene` example (or a new example)
   3. `01-VERIFICATION.md` status is updated to `passed` after formal visual playback confirmation of `basic_scene.mp4`
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 02.5-01: TBD
+- [ ] 02.5-01-PLAN.md — Deprecate encode_to_mp4, add LineState/TextState to animated_scene example and integration tests
+- [ ] 02.5-02-PLAN.md — Regenerate basic_scene.mp4, human visual confirmation, update 01-VERIFICATION.md to passed
 
 ### Phase 3: Data Visualization
 **Goal**: Users can create publication-quality 2D data plots with axes, smooth curves from data points, and automatic axis scaling
@@ -103,6 +104,6 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Rendering Pipeline and Primitives | 5/5 | Complete   | 2026-02-25 |
 | 2. Animation Engine | 3/3 | Complete   | 2026-02-25 |
-| 2.5. Tech Debt Cleanup | 0/0 | Not started | - |
+| 2.5. Tech Debt Cleanup | 0/2 | Not started | - |
 | 3. Data Visualization | 0/0 | Not started | - |
 | 4. GAM Visualization | 0/0 | Not started | - |
