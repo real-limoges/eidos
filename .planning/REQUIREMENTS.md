@@ -33,7 +33,7 @@
 ### GAM Visualization
 
 - [x] **GAM-01**: User can create a confidence band — a shaded region between two curves representing upper and lower bounds
-- [ ] **GAM-02**: User can animate a spline fitting to data — a curve that transitions from a flat/initial state to the fitted curve shape
+- [x] **GAM-02**: User can animate a spline fitting to data — a curve that transitions from a flat/initial state to the fitted curve shape
 
 ## v2 Requirements
 
@@ -90,7 +90,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | DATA-02 | Phase 3 | Complete |
 | DATA-03 | Phase 3 | Complete |
 | GAM-01 | Phase 4 | Complete |
-| GAM-02 | Phase 4 | Pending |
+| GAM-02 | Phase 4 | Complete |
 
 **Coverage:**
 - v1 requirements: 15 total

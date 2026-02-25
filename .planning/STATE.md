@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-25T15:50:35.022Z"
+last_updated: "2026-02-25T16:26:17.486Z"
 progress:
-  total_phases: 5
+  total_phases: 6
   completed_phases: 5
-  total_plans: 14
-  completed_plans: 14
+  total_plans: 17
+  completed_plans: 16
 ---
 
 # Project State
@@ -23,9 +23,9 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 4 of 4 (GAM Visualization — in progress)
-Plan: 1 of 3 in current phase (plan 04-01 complete — spline.rs extraction, ConfidenceBand with builder API, Axes::add_band() integration)
+Plan: 2 of 3 in current phase (plan 04-02 complete — SplineFit with frame-time morphing, left-to-right reveal, y-value interpolation via Tween<f64>)
 Status: Active
-Last activity: 2026-02-25 -- Plan 04-01 complete: extracted catmull_rom_segment_to_bezier to shared spline.rs, implemented ConfidenceBand, integrated add_band() into Axes with auto-range and Step 6.5 rendering
+Last activity: 2026-02-25 -- Plan 04-02 complete: implemented SplineFit with animate_fit() builder, to_bezier() dual interpolation (reveal frontier + y-morph)
 
 Progress: [██████████] 70% (14/20 plans est.)
 
@@ -60,6 +60,7 @@ Progress: [██████████] 70% (14/20 plans est.)
 | Phase 03-data-visualization P03 | 10 | 3 tasks | 4 files |
 | Phase 03.5-dataviz-tech-debt-cleanup P01 | 2 | 2 tasks | 2 files |
 | Phase 04-gam-visualization P01 | 3 | 2 tasks | 6 files |
+| Phase 04-gam-visualization P02 | 2 | 1 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,8 @@ Recent decisions affecting current work:
 - [Phase 04-01]: Band is fill-only (no stroke) — Bezier::fill() without .stroke() call; existing SVG renderer already handles stroke: None by omitting the attribute
 - [Phase 04-01]: Default opacity 0.25 makes band semi-transparent so data curves stay visually dominant
 - [Phase 04-01]: ConfidenceBand added to lib.rs public re-exports — first-class public API alongside Axes/DataCurve
+- [Phase 04-02]: FitAnimation stores Easing not Tween — Tween<f64> re-created cheaply per to_bezier() call
+- [Phase 04-02]: SplineFit added to lib.rs public re-exports — first-class public API alongside ConfidenceBand/DataCurve
 
 ### Pending Todos
 
@@ -121,5 +124,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 04-01-PLAN.md — extracted catmull_rom_segment_to_bezier to spline.rs, implemented ConfidenceBand, integrated Axes::add_band()
+Stopped at: Completed 04-02-PLAN.md — implemented SplineFit with frame-time morphing, left-to-right Catmull-Rom reveal, and y-value interpolation via Tween<f64>
 Resume file: None
