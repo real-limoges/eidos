@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Rendering Pipeline and Primitives** - Static scenes with styled shapes rendered to MP4 video (completed 2026-02-25)
 - [x] **Phase 2: Animation Engine** - Smooth property animation with easing and parallel composition (completed 2026-02-25)
-- [ ] **Phase 2.5: Tech Debt Cleanup** (INSERTED) - Close v1.0 audit tech debt: dead code removal, LineState/TextState example coverage, formal Phase 1 verification record
+- [x] **Phase 2.5: Tech Debt Cleanup** (INSERTED) - Close v1.0 audit tech debt: dead code removal, LineState/TextState example coverage, formal Phase 1 verification record (completed 2026-02-25)
 - [ ] **Phase 3: Data Visualization** - Cartesian axes, data curves, and auto-ranging coordinate mapping
 - [ ] **Phase 4: GAM Visualization** - Confidence bands and animated spline fitting
 
@@ -104,6 +104,6 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Rendering Pipeline and Primitives | 5/5 | Complete   | 2026-02-25 |
 | 2. Animation Engine | 3/3 | Complete   | 2026-02-25 |
-| 2.5. Tech Debt Cleanup | 1/2 | In Progress|  |
+| 2.5. Tech Debt Cleanup | 2/2 | Complete   | 2026-02-25 |
 | 3. Data Visualization | 0/0 | Not started | - |
 | 4. GAM Visualization | 0/0 | Not started | - |
