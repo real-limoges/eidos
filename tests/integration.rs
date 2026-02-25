@@ -139,6 +139,63 @@ fn easing_midpoint_differs_between_linear_and_ease_in_out() {
 }
 
 #[test]
+fn line_state_and_text_state_tween_midpoint_values() {
+    use eidos::{Easing, Tween};
+    use eidos::primitives::line::LineState;
+    use eidos::primitives::text::TextState;
+
+    // LineState: x1 moves 100 -> 300 over 1s with Linear easing — midpoint should be 200
+    let line_tween = Tween {
+        start: LineState {
+            x1: 100.0, y1: 0.0, x2: 200.0, y2: 0.0,
+            stroke_r: 0.0, stroke_g: 255.0, stroke_b: 0.0,
+            stroke_width: 2.0, opacity: 1.0,
+        },
+        end: LineState {
+            x1: 300.0, y1: 0.0, x2: 400.0, y2: 0.0,
+            stroke_r: 255.0, stroke_g: 0.0, stroke_b: 0.0,
+            stroke_width: 2.0, opacity: 1.0,
+        },
+        start_time: 0.0,
+        duration: 1.0,
+        easing: Easing::Linear,
+    };
+    let line_mid = line_tween.value_at(0.5);
+    assert!(
+        (line_mid.x1 - 200.0).abs() < 1e-9,
+        "LineState x1 midpoint should be 200.0, got {}",
+        line_mid.x1
+    );
+    let line = line_mid.to_line();
+    assert!((line.x1 - 200.0).abs() < 1e-9);
+
+    // TextState: font_size from 16 -> 32 over 1s with Linear easing — midpoint should be 24
+    let text_tween = Tween {
+        start: TextState {
+            x: 100.0, y: 100.0, font_size: 16.0,
+            fill_r: 255.0, fill_g: 255.0, fill_b: 255.0,
+            opacity: 1.0,
+        },
+        end: TextState {
+            x: 100.0, y: 100.0, font_size: 32.0,
+            fill_r: 255.0, fill_g: 255.0, fill_b: 255.0,
+            opacity: 1.0,
+        },
+        start_time: 0.0,
+        duration: 1.0,
+        easing: Easing::Linear,
+    };
+    let text_mid = text_tween.value_at(0.5);
+    assert!(
+        (text_mid.font_size - 24.0).abs() < 1e-9,
+        "TextState font_size midpoint should be 24.0, got {}",
+        text_mid.font_size
+    );
+    let text = text_mid.to_text("test label");
+    assert!((text.font_size - 24.0).abs() < 1e-9);
+}
+
+#[test]
 fn parallel_animations_both_execute() {
     use eidos::{Easing, Tween};
     use eidos::primitives::circle::CircleState;
