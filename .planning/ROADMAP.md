@@ -77,10 +77,12 @@ Plans:
   2. User can pass a `Vec<(f64, f64)>` of data points and receive a smooth curve rendered as an SVG path on the axes
   3. When the user provides data without specifying axis range, axes automatically scale to fit all data points with reasonable padding
   4. Data-space coordinates correctly map to visual-space positions -- a point at (5, 10) in data space appears at the correct location relative to the axis ticks
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 03-01: TBD
+- [ ] 03-01-PLAN.md — DataCurve struct and Catmull-Rom spline algorithm (src/dataviz/ module foundation)
+- [ ] 03-02-PLAN.md — Axes struct with Heckbert tick generation, coordinate mapping, auto-range, and to_primitives()
+- [ ] 03-03-PLAN.md — Wire dataviz into lib.rs and scene.rs, data_plot example, integration tests, human verification
 
 ### Phase 4: GAM Visualization
 **Goal**: Users can render the core GAM visualization elements -- confidence bands and animated spline fits -- that no other Rust tool provides
@@ -104,6 +106,6 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Rendering Pipeline and Primitives | 5/5 | Complete   | 2026-02-25 |
 | 2. Animation Engine | 3/3 | Complete   | 2026-02-25 |
-| 2.5. Tech Debt Cleanup | 2/2 | Complete   | 2026-02-25 |
-| 3. Data Visualization | 0/0 | Not started | - |
+| 2.5. Tech Debt Cleanup | 2/2 | Complete    | 2026-02-25 |
+| 3. Data Visualization | 0/3 | Not started | - |
 | 4. GAM Visualization | 0/0 | Not started | - |
