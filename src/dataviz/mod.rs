@@ -1,4 +1,5 @@
 pub mod axes;
+pub mod camera;
 pub mod confidence_band;
 pub mod data_curve;
 pub(crate) mod spline;
