@@ -26,9 +26,9 @@
 
 ### Data Visualization
 
-- [ ] **DATA-01**: User can create 2D cartesian axes with ticks, labels, and configurable range
+- [x] **DATA-01**: User can create 2D cartesian axes with ticks, labels, and configurable range
 - [x] **DATA-02**: User can construct a smooth curve from `Vec<(f64, f64)>` data points rendered as an SVG path
-- [ ] **DATA-03**: Axes auto-range to fit provided data (no manual min/max required)
+- [x] **DATA-03**: Axes auto-range to fit provided data (no manual min/max required)
 
 ### GAM Visualization
 
@@ -86,9 +86,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PRIM-06 | Phase 1 | Complete |
 | ANIM-01 | Phase 2 | Complete |
 | ANIM-02 | Phase 2 | Complete |
-| DATA-01 | Phase 3 | Pending |
+| DATA-01 | Phase 3 | Complete |
 | DATA-02 | Phase 3 | Complete |
-| DATA-03 | Phase 3 | Pending |
+| DATA-03 | Phase 3 | Complete |
 | GAM-01 | Phase 4 | Pending |
 | GAM-02 | Phase 4 | Pending |
 
