@@ -5,23 +5,23 @@
 See: .planning/PROJECT.md (updated 2026-02-24)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API -- no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 2: Animation Engine
+**Current focus:** Phase 2.5: Tech Debt Cleanup
 
 ## Current Position
 
-Phase: 2 of 4 (Animation Engine)
-Plan: 3 of 5 in current phase (plan 02-03 complete)
+Phase: 2.5 of 4 (Tech Debt Cleanup)
+Plan: 1 of 1 in current phase (plan 02.5-01 complete)
 Status: Active
-Last activity: 2026-02-25 -- Plan 02-03 complete: animated_scene example, Phase 2 integration tests, human visual verification approved
+Last activity: 2026-02-25 -- Plan 02.5-01 complete: encode_to_mp4 deprecated, LineState+TextState coverage added to example and integration tests
 
-Progress: [████████░░] 40% (8/20 plans est.)
+Progress: [████████░░] 45% (9/20 plans est.)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 5
+- Total plans completed: 6
 - Average duration: 2 min
-- Total execution time: 0.14 hours
+- Total execution time: 0.17 hours
 
 **By Phase:**
 
@@ -29,9 +29,10 @@ Progress: [████████░░] 40% (8/20 plans est.)
 |-------|-------|-------|----------|
 | 01-rendering-pipeline-and-primitives | 5 | 11 min | 2 min |
 | 02-animation-engine | 1 | 5 min | 5 min |
+| 02.5-tech-debt-cleanup | 1 | 2 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-02 (2 min), 01-03 (2 min), 01-04 (3 min), 01-05 (2 min), 02-01 (5 min)
+- Last 5 plans: 01-04 (3 min), 01-05 (2 min), 02-01 (5 min), 02-02 (2 min), 02-03 (5 min), 02.5-01 (2 min)
 - Trend: Consistent 2-5 min/plan
 
 *Updated after each plan completion*
@@ -39,6 +40,7 @@ Progress: [████████░░] 40% (8/20 plans est.)
 | Phase 02-animation-engine P01 | 5 | 1 commit | 10 files |
 | Phase 02-animation-engine P02 | 2 | 2 tasks | 2 files |
 | Phase 02-animation-engine P03 | 5 | 3 tasks | 4 files |
+| Phase 02.5-tech-debt-cleanup P01 | 2 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -71,6 +73,8 @@ Recent decisions affecting current work:
 - [Phase 02-animation-engine]: encode_to_mp4_animated takes frame index (u64) not scene time; Scene::render() computes t_secs so svg_gen stays fps-agnostic
 - [Phase 02-animation-engine]: render_static() delegates to render() with |s, _t| wrapper — Phase 1 callers updated in 02-03, not here
 - [Phase 02-animation-engine]: No new decisions — parallel Tween composition wired together without architectural choices
+- [Phase 02.5-01]: #[allow(dead_code)] paired with #[deprecated] on encode_to_mp4 — suppresses unused warning while communicating deprecation; removal deferred to Phase 3
+- [Phase 02.5-01]: LineState and TextState use submodule import paths (eidos::primitives::line::LineState) — primitives/mod.rs does not re-export State types
 
 ### Pending Todos
 
@@ -84,5 +88,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 02-03-PLAN.md — animated_scene example, Phase 2 integration tests (ANIM-01, ANIM-02), human verification approved
+Stopped at: Completed 02.5-01-PLAN.md — encode_to_mp4 deprecated, LineState+TextState coverage added to example and integration tests
 Resume file: None

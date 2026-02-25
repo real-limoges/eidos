@@ -104,6 +104,6 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 4
 |-------|----------------|--------|-----------|
 | 1. Rendering Pipeline and Primitives | 5/5 | Complete   | 2026-02-25 |
 | 2. Animation Engine | 3/3 | Complete   | 2026-02-25 |
-| 2.5. Tech Debt Cleanup | 0/2 | Not started | - |
+| 2.5. Tech Debt Cleanup | 1/2 | In Progress|  |
 | 3. Data Visualization | 0/0 | Not started | - |
 | 4. GAM Visualization | 0/0 | Not started | - |
