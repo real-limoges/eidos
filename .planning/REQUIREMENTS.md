@@ -14,10 +14,10 @@
 
 - [x] **PRIM-01**: User can add a circle with configurable fill, stroke, and opacity
 - [x] **PRIM-02**: User can add a rectangle with configurable fill, stroke, and opacity
-- [ ] **PRIM-03**: User can add a line with configurable stroke color and width
-- [ ] **PRIM-04**: User can add an arrow (directed line with arrowhead) with configurable styling
-- [ ] **PRIM-05**: User can add a text label with configurable content, position, and size
-- [ ] **PRIM-06**: User can add a bezier curve/path with configurable stroke
+- [x] **PRIM-03**: User can add a line with configurable stroke color and width
+- [x] **PRIM-04**: User can add an arrow (directed line with arrowhead) with configurable styling
+- [x] **PRIM-05**: User can add a text label with configurable content, position, and size
+- [x] **PRIM-06**: User can add a bezier curve/path with configurable stroke
 
 ### Animation
 
@@ -80,10 +80,10 @@ Which phases cover which requirements. Updated during roadmap creation.
 | CORE-02 | Phase 1 | Complete |
 | PRIM-01 | Phase 1 | Complete |
 | PRIM-02 | Phase 1 | Complete |
-| PRIM-03 | Phase 1 | Pending |
-| PRIM-04 | Phase 1 | Pending |
-| PRIM-05 | Phase 1 | Pending |
-| PRIM-06 | Phase 1 | Pending |
+| PRIM-03 | Phase 1 | Complete |
+| PRIM-04 | Phase 1 | Complete |
+| PRIM-05 | Phase 1 | Complete |
+| PRIM-06 | Phase 1 | Complete |
 | ANIM-01 | Phase 2 | Pending |
 | ANIM-02 | Phase 2 | Pending |
 | DATA-01 | Phase 3 | Pending |
