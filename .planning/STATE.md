@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: milestone
 status: unknown
-last_updated: "2026-02-25T15:47:40.019Z"
+last_updated: "2026-02-25T15:50:35.022Z"
 progress:
   total_phases: 5
   completed_phases: 5
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 
 ## Current Position
 
-Phase: 3.5 of 4 (Dataviz Tech Debt Cleanup — complete)
-Plan: 1 of 1 in current phase (plan 03.5-01 complete — removed unused import, added E2E render test, registered data_plot example)
+Phase: 4 of 4 (GAM Visualization — in progress)
+Plan: 1 of 3 in current phase (plan 04-01 complete — spline.rs extraction, ConfidenceBand with builder API, Axes::add_band() integration)
 Status: Active
-Last activity: 2026-02-25 -- Plan 03.5-01 complete: removed AxisRange unused import, added dataviz_render_produces_mp4 E2E test, Cargo.toml data_plot [[example]] block
+Last activity: 2026-02-25 -- Plan 04-01 complete: extracted catmull_rom_segment_to_bezier to shared spline.rs, implemented ConfidenceBand, integrated add_band() into Axes with auto-range and Step 6.5 rendering
 
 Progress: [██████████] 70% (14/20 plans est.)
 
@@ -59,6 +59,7 @@ Progress: [██████████] 70% (14/20 plans est.)
 | Phase 03-data-visualization P02 | 3 | 1 tasks | 2 files |
 | Phase 03-data-visualization P03 | 10 | 3 tasks | 4 files |
 | Phase 03.5-dataviz-tech-debt-cleanup P01 | 2 | 2 tasks | 2 files |
+| Phase 04-gam-visualization P01 | 3 | 2 tasks | 6 files |
 
 ## Accumulated Context
 
@@ -102,6 +103,11 @@ Recent decisions affecting current work:
 - [Phase 03-03]: SceneBuilder::add_axes() decomposes Axes via to_primitives() and pushes each primitive — no special axes node in scene graph, keeps rendering pipeline uniform
 - [Phase 03-03]: pub use dataviz::{Axes, AxisRange, DataCurve} added to lib.rs — dataviz types are first-class public API members
 - [Phase 03.5-01]: Local ffmpeg_available() defined in each integration test file rather than a shared module — accepted Rust pattern without tests/common/mod.rs
+- [Phase 04-01]: spline.rs is pub(crate) — ConfidenceBand and SplineFit share catmull_rom_segment_to_bezier without exposing it in the public API
+- [Phase 04-01]: to_bezier_path() takes pre-mapped pixel-space points (same pattern as DataCurve) — caller maps data to visual space before spline computation
+- [Phase 04-01]: Band is fill-only (no stroke) — Bezier::fill() without .stroke() call; existing SVG renderer already handles stroke: None by omitting the attribute
+- [Phase 04-01]: Default opacity 0.25 makes band semi-transparent so data curves stay visually dominant
+- [Phase 04-01]: ConfidenceBand added to lib.rs public re-exports — first-class public API alongside Axes/DataCurve
 
 ### Pending Todos
 
@@ -115,5 +121,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 03.5-01-PLAN.md — removed unused AxisRange import, added dataviz_render_produces_mp4 E2E test, registered data_plot example in Cargo.toml
+Stopped at: Completed 04-01-PLAN.md — extracted catmull_rom_segment_to_bezier to spline.rs, implemented ConfidenceBand, integrated Axes::add_band()
 Resume file: None
