@@ -1,5 +1,6 @@
 // src/primitives/text.rs
 use crate::{Color, EidosError};
+use keyframe_derive::CanTween;
 
 /// Text horizontal alignment.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -156,6 +157,36 @@ impl Text {
         }
 
         text_el
+    }
+}
+
+/// Animatable state for Text. All fields are f64 for CanTween compatibility.
+/// Content (string) is not animatable — pass it separately to to_text().
+/// Color channels are 0.0..=255.0; opacity is 0.0..=1.0.
+#[derive(Clone, CanTween)]
+pub struct TextState {
+    pub x: f64,
+    pub y: f64,
+    pub font_size: f64,
+    pub fill_r: f64,
+    pub fill_g: f64,
+    pub fill_b: f64,
+    pub opacity: f64,
+}
+
+impl TextState {
+    /// Build a Text from this interpolated state. Content must be supplied separately
+    /// (strings are not interpolatable — use a fixed &str from the animation closure).
+    pub fn to_text(&self, content: &str) -> crate::primitives::Text {
+        let r = self.fill_r.clamp(0.0, 255.0) as u8;
+        let g = self.fill_g.clamp(0.0, 255.0) as u8;
+        let b = self.fill_b.clamp(0.0, 255.0) as u8;
+        crate::primitives::Text::new(self.x, self.y, content)
+            .fill(crate::Color::rgb(r, g, b))
+            .font_size(self.font_size.max(1.0))
+            .unwrap() // safe: font_size clamped to at least 1.0 (positive)
+            .opacity(self.opacity.clamp(0.0, 1.0))
+            .unwrap() // safe: opacity clamped to valid range
     }
 }
 

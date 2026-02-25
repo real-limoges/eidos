@@ -1,5 +1,6 @@
 // src/primitives/circle.rs
 use crate::{Color, EidosError};
+use keyframe_derive::CanTween;
 
 /// A circle primitive defined by its center and radius.
 #[derive(Debug, Clone)]
@@ -75,6 +76,34 @@ impl Circle {
         }
 
         el
+    }
+}
+
+/// Animatable state for Circle. All fields are f64 for CanTween compatibility.
+/// Color channels are 0.0..=255.0; opacity is 0.0..=1.0.
+#[derive(Clone, CanTween)]
+pub struct CircleState {
+    pub cx: f64,
+    pub cy: f64,
+    pub r: f64,
+    pub fill_r: f64,
+    pub fill_g: f64,
+    pub fill_b: f64,
+    pub opacity: f64,
+}
+
+impl CircleState {
+    /// Build a Circle from this interpolated state.
+    /// Color channels are clamped to [0, 255] then cast to u8.
+    /// Opacity is clamped to [0.0, 1.0].
+    pub fn to_circle(&self) -> Circle {
+        let r = self.fill_r.clamp(0.0, 255.0) as u8;
+        let g = self.fill_g.clamp(0.0, 255.0) as u8;
+        let b = self.fill_b.clamp(0.0, 255.0) as u8;
+        Circle::new(self.cx, self.cy, self.r)
+            .fill(crate::Color::rgb(r, g, b))
+            .opacity(self.opacity.clamp(0.0, 1.0))
+            .unwrap() // safe: opacity is clamped to valid range
     }
 }
 

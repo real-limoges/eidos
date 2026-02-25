@@ -7,6 +7,8 @@ edition = "2024"
 svg = "0.18"
 resvg = "0.47"
 ttf-noto-sans = "0.1"
+keyframe = "1.1"
+keyframe_derive = "1.0"
 
 [[example]]
 name = "basic_scene"

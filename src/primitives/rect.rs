@@ -1,5 +1,6 @@
 // src/primitives/rect.rs
 use crate::{Color, EidosError};
+use keyframe_derive::CanTween;
 
 /// A rectangle primitive with top-left origin.
 #[derive(Debug, Clone)]
@@ -78,6 +79,35 @@ impl Rect {
         }
 
         el
+    }
+}
+
+/// Animatable state for Rect. All fields are f64 for CanTween compatibility.
+/// Color channels are 0.0..=255.0; opacity is 0.0..=1.0.
+#[derive(Clone, CanTween)]
+pub struct RectState {
+    pub x: f64,
+    pub y: f64,
+    pub width: f64,
+    pub height: f64,
+    pub fill_r: f64,
+    pub fill_g: f64,
+    pub fill_b: f64,
+    pub opacity: f64,
+}
+
+impl RectState {
+    /// Build a Rect from this interpolated state.
+    /// Color channels are clamped to [0, 255] then cast to u8.
+    /// Opacity is clamped to [0.0, 1.0].
+    pub fn to_rect(&self) -> Rect {
+        let r = self.fill_r.clamp(0.0, 255.0) as u8;
+        let g = self.fill_g.clamp(0.0, 255.0) as u8;
+        let b = self.fill_b.clamp(0.0, 255.0) as u8;
+        Rect::new(self.x, self.y, self.width, self.height)
+            .fill(crate::Color::rgb(r, g, b))
+            .opacity(self.opacity.clamp(0.0, 1.0))
+            .unwrap() // safe: opacity is clamped to valid range
     }
 }
 

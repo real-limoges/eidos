@@ -1,5 +1,6 @@
 // src/primitives/line.rs
 use crate::{Color, EidosError};
+use keyframe_derive::CanTween;
 
 /// A line segment from (x1, y1) to (x2, y2). No fill — only stroke color and width.
 #[derive(Debug, Clone)]
@@ -66,6 +67,37 @@ impl Line {
             .set("stroke", self.stroke_color.to_hex())
             .set("stroke-width", self.stroke_width)
             .set("opacity", self.opacity)
+    }
+}
+
+/// Animatable state for Line. All fields are f64 for CanTween compatibility.
+/// Color channels are 0.0..=255.0; stroke_width and opacity are non-negative.
+#[derive(Clone, CanTween)]
+pub struct LineState {
+    pub x1: f64,
+    pub y1: f64,
+    pub x2: f64,
+    pub y2: f64,
+    pub stroke_r: f64,
+    pub stroke_g: f64,
+    pub stroke_b: f64,
+    pub stroke_width: f64,
+    pub opacity: f64,
+}
+
+impl LineState {
+    /// Build a Line from this interpolated state.
+    /// Color channels are clamped to [0, 255] then cast to u8.
+    pub fn to_line(&self) -> Line {
+        let r = self.stroke_r.clamp(0.0, 255.0) as u8;
+        let g = self.stroke_g.clamp(0.0, 255.0) as u8;
+        let b = self.stroke_b.clamp(0.0, 255.0) as u8;
+        Line::new(self.x1, self.y1, self.x2, self.y2)
+            .stroke_color(crate::Color::rgb(r, g, b))
+            .stroke_width(self.stroke_width.max(0.0))
+            .unwrap() // safe: stroke_width clamped to non-negative
+            .opacity(self.opacity.clamp(0.0, 1.0))
+            .unwrap() // safe: opacity clamped to valid range
     }
 }
 
