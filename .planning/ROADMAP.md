@@ -45,10 +45,12 @@ Plans:
   1. User can specify a start state and end state for any visual property (position, color, opacity, scale) and eidos produces a video showing smooth interpolation between them
   2. User can select from standard easing functions (linear, ease-in, ease-out, ease-in-out) and the animation curve visibly differs between choices
   3. User can compose multiple property animations to run simultaneously -- e.g., a circle moves right while fading from red to blue -- and both animations play in sync in the output video
-**Plans**: TBD
+**Plans**: 3 plans
 
 Plans:
-- [ ] 02-01: TBD
+- [ ] 02-01-PLAN.md — Animation foundation: Easing enum, Tween<P>, and *State structs for Circle/Rect/Line/Text with CanTween derive
+- [ ] 02-02-PLAN.md — Render pipeline upgrade: encode_to_mp4_animated(), Scene::render(t), render_static() backward-compat wrapper
+- [ ] 02-03-PLAN.md — Wire-up: fix Phase 1 callers, animated_scene example, Phase 2 integration tests + human verification
 
 ### Phase 3: Data Visualization
 **Goal**: Users can create publication-quality 2D data plots with axes, smooth curves from data points, and automatic axis scaling
