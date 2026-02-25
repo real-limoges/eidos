@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
 milestone: v1.0
-milestone_name: milestone
+milestone_name: API Ergonomics Cleanup
 status: unknown
-last_updated: "2026-02-25T16:38:18.406Z"
+last_updated: "2026-02-25T19:00:17.489Z"
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 17
-  completed_plans: 17
+  total_phases: 8
+  completed_phases: 7
+  total_plans: 18
+  completed_plans: 18
 ---
 
 # Project State
@@ -22,10 +22,10 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 
 ## Current Position
 
-Phase: 4.5 (GAM Visualization Completion — IN PROGRESS)
-Plan: 1 of 1 in current phase (04.5-01 Tasks 1-2 complete, paused at checkpoint Task 3)
-Status: In Progress (checkpoint:human-verify)
-Last activity: 2026-02-25 -- 04.5-01 Tasks 1-2 complete: Axes::plot_bounds() added with 2 tests, gam_plot.rs and gam_viz.rs updated, gam_plot.mp4 rendered. Awaiting visual confirmation.
+Phase: 4.5 (GAM Visualization Completion — COMPLETE)
+Plan: 1 of 1 in current phase (04.5-01 all 3 tasks complete)
+Status: Complete
+Last activity: 2026-02-25 -- 04.5-01 complete: Axes::plot_bounds() added with 2 tests, gam_plot.rs and gam_viz.rs updated, gam_plot.mp4 human-verified. Phase 4 milestone closed (04-VERIFICATION.md: passed).
 
 Progress: [████████████] 100% (17/17 plans)
 
@@ -62,6 +62,7 @@ Progress: [████████████] 100% (17/17 plans)
 | Phase 04-gam-visualization P01 | 3 | 2 tasks | 6 files |
 | Phase 04-gam-visualization P02 | 2 | 1 tasks | 3 files |
 | Phase 04-gam-visualization P03 | 7 | 2 tasks | 4 files |
+| Phase 04.5 P01 | 10 | 3 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -114,6 +115,7 @@ Recent decisions affecting current work:
 - [Phase 04-02]: SplineFit added to lib.rs public re-exports — first-class public API alongside ConfidenceBand/DataCurve
 - [Phase 04-gam-visualization]: visual_pts mapped outside render closure — coordinate mapping is deterministic for fixed Axes ranges, avoiding redundant computation per frame
 - [Phase 04-gam-visualization]: Example uses scene.render() not render_static() — SplineFit requires per-frame t_secs for animation; integration test uses render_static() for static ConfidenceBand test
+- [Phase 04.5]: plot_bounds() accepted duplication with to_primitives() Steps 1-2 — research Option (a); avoids refactoring production rendering path
 
 ### Pending Todos
 
@@ -127,5 +129,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: 04.5-01 Tasks 1-2 complete (Axes::plot_bounds() added, gam_plot.rs and gam_viz.rs updated). At checkpoint Task 3: gam_plot.mp4 rendered at /tmp/gam_plot.mp4, awaiting human visual confirmation.
+Stopped at: Completed 04.5-01-PLAN.md — Phase 4.5 GAM Visualization Completion fully done.
 Resume file: None

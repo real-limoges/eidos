@@ -18,7 +18,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Data Visualization** - Cartesian axes, data curves, and auto-ranging coordinate mapping (completed 2026-02-25)
 - [x] **Phase 3.5: Dataviz Tech Debt Cleanup** (INSERTED) - Close Phase 3 audit tech debt: E2E MP4 integration test, Cargo.toml example registration, unused import removal (completed 2026-02-25)
 - [x] **Phase 4: GAM Visualization** - Confidence bands and animated spline fitting (completed 2026-02-25)
-- [ ] **Phase 4.5: GAM Visualization Completion** (INSERTED) - Complete Phase 4 sign-off: human visual gate for gam_plot.mp4 + Axes::plot_bounds() to fix coordinate mapping contract (INT-01)
+- [x] **Phase 4.5: GAM Visualization Completion** (INSERTED) - Complete Phase 4 sign-off: human visual gate for gam_plot.mp4 + Axes::plot_bounds() to fix coordinate mapping contract (INT-01) (completed 2026-02-25)
 - [ ] **Phase 4.6: v1.0 API Ergonomics Cleanup** (INSERTED) - Public API re-exports at crate root (SceneBuilder, *State types, primitive types), remove deprecated encode_to_mp4, fix docs overclaim
 
 ## Phase Details
@@ -157,5 +157,5 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 3.5 -> 4 -> 4.5 -> 4.6
 | 3. Data Visualization | 3/3 | Complete   | 2026-02-25 |
 | 3.5. Dataviz Tech Debt Cleanup | 1/1 | Complete   | 2026-02-25 |
 | 4. GAM Visualization | 3/3 | Complete   | 2026-02-25 |
-| 4.5. GAM Visualization Completion | 0/1 | Pending | — |
+| 4.5. GAM Visualization Completion | 1/1 | Complete   | 2026-02-25 |
 | 4.6. v1.0 API Ergonomics Cleanup | 0/1 | Pending | — |
