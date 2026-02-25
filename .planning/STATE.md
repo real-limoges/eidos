@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-02-24)
 ## Current Position
 
 Phase: 1 of 4 (Rendering Pipeline and Primitives)
-Plan: 4 of 5 in current phase (plan 01-04 complete)
+Plan: 5 of 5 in current phase (plan 01-05 complete — awaiting human-verify checkpoint)
 Status: In progress
-Last activity: 2026-02-25 -- Plan 01-04 completed
+Last activity: 2026-02-25 -- Plan 01-05 completed (awaiting human verify)
 
-Progress: [████░░░░░░] 20% (4/20 plans est.)
+Progress: [█████░░░░░] 25% (5/20 plans est.)
 
 ## Performance Metrics
 
@@ -27,10 +27,10 @@ Progress: [████░░░░░░] 20% (4/20 plans est.)
 
 | Phase | Plans | Total | Avg/Plan |
 |-------|-------|-------|----------|
-| 01-rendering-pipeline-and-primitives | 4 | 9 min | 2 min |
+| 01-rendering-pipeline-and-primitives | 5 | 11 min | 2 min |
 
 **Recent Trend:**
-- Last 5 plans: 01-01 (2 min), 01-02 (2 min), 01-03 (2 min), 01-04 (3 min)
+- Last 5 plans: 01-01 (2 min), 01-02 (2 min), 01-03 (2 min), 01-04 (3 min), 01-05 (2 min)
 - Trend: Consistent 2-3 min/plan
 
 *Updated after each plan completion*
@@ -56,6 +56,8 @@ Recent decisions affecting current work:
 - [Phase 01-rendering-pipeline-and-primitives]: TSpan::new(content) in svg 0.18 takes content as constructor arg — no .add(TextNode::new()) needed
 - [Phase 01-rendering-pipeline-and-primitives]: Arrow uses AtomicU64 counter for unique SVG marker IDs — zero external dependencies, thread-safe
 - [Phase 01-rendering-pipeline-and-primitives]: Bezier named to match mod.rs export and Primitive enum variant (not BezierPath as in plan pseudocode)
+- [Phase 01-05]: Arrow::to_svg_parts() called twice per arrow — acceptable for Phase 1 static scenes, cache in Phase 2 if needed
+- [Phase 01-05]: Integration test guards render path with ffmpeg_available() — CI portability without hard ffmpeg dependency
 
 ### Pending Todos
 
@@ -69,5 +71,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-25
-Stopped at: Completed 01-04-PLAN.md (Line, Arrow, Text, Bezier primitive builders with full SVG conversion)
+Stopped at: Completed 01-05-PLAN.md (SVG dispatch wiring, basic_scene example, integration tests — awaiting Task 3 human-verify checkpoint)
 Resume file: None
