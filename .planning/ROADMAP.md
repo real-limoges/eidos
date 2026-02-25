@@ -18,6 +18,8 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Data Visualization** - Cartesian axes, data curves, and auto-ranging coordinate mapping (completed 2026-02-25)
 - [x] **Phase 3.5: Dataviz Tech Debt Cleanup** (INSERTED) - Close Phase 3 audit tech debt: E2E MP4 integration test, Cargo.toml example registration, unused import removal (completed 2026-02-25)
 - [x] **Phase 4: GAM Visualization** - Confidence bands and animated spline fitting (completed 2026-02-25)
+- [ ] **Phase 4.5: GAM Visualization Completion** (INSERTED) - Complete Phase 4 sign-off: human visual gate for gam_plot.mp4 + Axes::plot_bounds() to fix coordinate mapping contract (INT-01)
+- [ ] **Phase 4.6: v1.0 API Ergonomics Cleanup** (INSERTED) - Public API re-exports at crate root (SceneBuilder, *State types, primitive types), remove deprecated encode_to_mp4, fix docs overclaim
 
 ## Phase Details
 
@@ -114,10 +116,38 @@ Plans:
 - [ ] 04-02-PLAN.md — SplineFit struct with frame-time morphing: left-to-right reveal + y-value interpolation from mean_y
 - [ ] 04-03-PLAN.md — Wire lib.rs pub use, gam_plot example, integration tests, human visual confirmation
 
+### Phase 4.5: GAM Visualization Completion
+**Goal**: Complete Phase 4 milestone sign-off — confirm gam_plot.mp4 visual output and fix the coordinate mapping contract between Axes and SplineFit
+**Depends on**: Phase 4
+**Requirements**: None (GAM-01 and GAM-02 already satisfied; this closes the human verification gate and INT-01 design gap)
+**Gap Closure:** Closes tech debt from v1.0 audit: Phase 4 human_needed verification status, INT-01 fragile coordinate contract
+**Success Criteria** (what must be TRUE):
+  1. 04-VERIFICATION.md status is updated to `passed` after human visual confirmation of gam_plot.mp4 (confidence band shading, yellow spline reveal, y-morph from flat)
+  2. `Axes::plot_bounds()` public method exists and returns tick-adjusted `(x_min, x_max, y_min, y_max)` — callers no longer need to replicate internal Axes coordinate mapping
+  3. gam_plot.rs and gam_viz.rs tests use `axes.plot_bounds()` to compute visual_pts instead of hardcoded helper functions
+**Plans**: 1 plan
+
+Plans:
+- [ ] 04.5-01-PLAN.md — Human visual gate (gam_plot.mp4 confirmation) + Axes::plot_bounds() + update gam_plot example and gam_viz tests to use it
+
+### Phase 4.6: v1.0 API Ergonomics Cleanup
+**Goal**: Polish the v1.0 public API surface — re-export all user-facing types at the crate root, remove the deprecated encode_to_mp4 function, fix documentation inaccuracy
+**Depends on**: Phase 4.5
+**Requirements**: None (housekeeping — all v1 requirements already satisfied)
+**Gap Closure:** Closes tech debt from v1.0 audit: public API re-export gaps, deprecated dead code, docs overclaim
+**Success Criteria** (what must be TRUE):
+  1. Users can write `use eidos::{SceneBuilder, CircleState, RectState, LineState, TextState, Circle, Rect, Line, Arrow, Text, Bezier, Primitive}` — all user-facing types at crate root
+  2. `cargo build --all-targets` produces zero warnings (encode_to_mp4 removed, no dead_code allow needed)
+  3. 03-03-SUMMARY.md correctly states "11 integration tests"
+**Plans**: 1 plan
+
+Plans:
+- [ ] 04.6-01-PLAN.md — Add pub use re-exports to src/lib.rs, remove encode_to_mp4 from svg_gen.rs, fix 03-03-SUMMARY.md
+
 ## Progress
 
 **Execution Order:**
-Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 3.5 -> 4
+Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 3.5 -> 4 -> 4.5 -> 4.6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
@@ -127,3 +157,5 @@ Phases execute in numeric order: 1 -> 2 -> 2.5 -> 3 -> 3.5 -> 4
 | 3. Data Visualization | 3/3 | Complete   | 2026-02-25 |
 | 3.5. Dataviz Tech Debt Cleanup | 1/1 | Complete   | 2026-02-25 |
 | 4. GAM Visualization | 3/3 | Complete   | 2026-02-25 |
+| 4.5. GAM Visualization Completion | 0/1 | Pending | — |
+| 4.6. v1.0 API Ergonomics Cleanup | 0/1 | Pending | — |
