@@ -92,50 +92,48 @@ impl Scene {
 
     /// Render the scene to an MP4 file at `output_path`.
     ///
-    /// The `build_scene` closure receives a `&mut SceneBuilder` and should call
-    /// `builder.add(primitive)` for each primitive to include in the scene.
+    /// The `build_scene` closure receives a `&mut SceneBuilder` and scene time in seconds (f64).
+    /// It is called once per frame — use the time parameter to interpolate animated properties.
     ///
-    /// For Phase 1 (static scenes), all frames are identical — the same SVG is
-    /// rasterized once and written to ffmpeg stdin `total_frames` times.
+    /// For static scenes, use `render_static()` which wraps this with `|s, _t| f(s)`.
     ///
-    /// Phase 2 will call build_scene() per-frame with animated state instead.
+    /// fontdb is cloned (Arc clone — cheap) before the loop; not re-initialized per frame.
     pub fn render<F, P>(&self, build_scene: F, output_path: P) -> Result<(), EidosError>
+    where
+        F: Fn(&mut SceneBuilder, f64),
+        P: AsRef<std::path::Path>,
+    {
+        let total_frames = (self.fps as f64 * self.duration_secs).round() as u64;
+        let width = self.width;
+        let height = self.height;
+        let fps = self.fps;
+        let fontdb = self.fontdb.clone(); // Arc clone — cheap, done once before loop
+
+        crate::svg_gen::encode_to_mp4_animated(
+            |frame_idx| {
+                let t_secs = frame_idx as f64 / fps as f64;
+                let mut builder = SceneBuilder { primitives: Vec::new() };
+                build_scene(&mut builder, t_secs);
+                let svg = crate::svg_gen::build_svg_document(width, height, &builder.primitives);
+                crate::svg_gen::rasterize_frame(&svg, width, height, &fontdb)
+            },
+            total_frames,
+            width,
+            height,
+            fps,
+            output_path.as_ref(),
+        )
+    }
+
+    /// Convenience wrapper for static (non-animated) scenes.
+    /// Accepts `Fn(&mut SceneBuilder)` — the Phase 1 API.
+    /// Delegates to `render()` with the time parameter ignored.
+    /// Use `render()` directly for animated scenes.
+    pub fn render_static<F, P>(&self, build_scene: F, output_path: P) -> Result<(), EidosError>
     where
         F: Fn(&mut SceneBuilder),
         P: AsRef<std::path::Path>,
     {
-        let mut builder = SceneBuilder {
-            primitives: Vec::new(),
-        };
-        build_scene(&mut builder);
-
-        // Generate SVG string from accumulated primitives
-        let svg_string = crate::svg_gen::build_svg_document(
-            self.width,
-            self.height,
-            &builder.primitives,
-        );
-
-        // Rasterize once — for static Phase 1 scenes all frames are identical
-        // Phase 2 will rasterize a different frame per animation step
-        let rgba_frame = crate::svg_gen::rasterize_frame(
-            &svg_string,
-            self.width,
-            self.height,
-            &self.fontdb,
-        )?;
-
-        // Total frames = fps * duration (rounded to nearest whole frame)
-        let total_frames = (self.fps as f64 * self.duration_secs).round() as u64;
-
-        // Encode to H.264 MP4 via ffmpeg subprocess
-        crate::svg_gen::encode_to_mp4(
-            &rgba_frame,
-            total_frames,
-            self.width,
-            self.height,
-            self.fps,
-            output_path.as_ref(),
-        )
+        self.render(|s, _t| build_scene(s), output_path)
     }
 }
