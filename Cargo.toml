@@ -1,0 +1,13 @@
+[package]
+name = "eidos"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+svg = "0.18"
+resvg = "0.47"
+ttf-noto-sans = "0.1"
+
+[[example]]
+name = "basic_scene"
+path = "examples/basic_scene.rs"
