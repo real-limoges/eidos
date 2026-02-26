@@ -42,17 +42,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .stroke_width(2.5)
         .animate_fit(0.5, 3.0, Easing::EaseInOut);
 
-    // Map fitted points to visual space using Axes::plot_bounds() -- guaranteed to match
-    // to_primitives() coordinate mapping (tick-adjusted bounds, same formula).
-    let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
-    let visual_pts: Vec<(f64, f64)> = fitted
-        .iter()
-        .map(|&(x, y)| {
-            let px = axes.x + (x - x_min) / (x_max - x_min) * axes.width;
-            let py = (axes.y + axes.height) - (y - y_min) / (y_max - y_min) * axes.height;
-            (px, py)
-        })
-        .collect();
+    // Map fitted points to pixel space for SplineFit bezier generation.
+    let visual_pts: Vec<(f64, f64)> = fitted.iter().map(|&(x, y)| axes.map_point(x, y)).collect();
 
     // --- Scene: 1280x720, 30fps, 4 seconds ---
     let scene = Scene::new(1280, 720, 30)?.duration(4.0);

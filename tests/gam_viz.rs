@@ -39,11 +39,20 @@ fn confidence_band_renders_to_mp4() {
     let out = temp_mp4("gam_band_test.mp4");
     let scene = Scene::new(1024, 640, 24).expect("valid scene");
     scene
-        .render_static(|s| { s.add_axes(&axes); }, &out)
+        .render_static(
+            |s| {
+                s.add_axes(&axes);
+            },
+            &out,
+        )
         .expect("render should succeed");
 
     let meta = std::fs::metadata(&out).expect("output file must exist");
-    assert!(meta.len() > 1000, "output file too small: {} bytes", meta.len());
+    assert!(
+        meta.len() > 1000,
+        "output file too small: {} bytes",
+        meta.len()
+    );
     std::fs::remove_file(&out).ok();
 }
 
@@ -66,18 +75,12 @@ fn spline_fit_animation_renders_to_mp4() {
         .x_range(0.0, 10.0)
         .y_range(-1.5, 1.5);
 
-    let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
-    let visual_pts: Vec<(f64, f64)> = pts
-        .iter()
-        .map(|&(x, y)| {
-            let px = axes.x + (x - x_min) / (x_max - x_min) * axes.width;
-            let py = (axes.y + axes.height) - (y - y_min) / (y_max - y_min) * axes.height;
-            (px, py)
-        })
-        .collect();
+    let visual_pts: Vec<(f64, f64)> = pts.iter().map(|&(x, y)| axes.map_point(x, y)).collect();
 
     let out = temp_mp4("gam_spline_test.mp4");
-    let scene = Scene::new(1024, 640, 24).expect("valid scene").duration(3.0);
+    let scene = Scene::new(1024, 640, 24)
+        .expect("valid scene")
+        .duration(3.0);
 
     scene
         .render(
@@ -92,6 +95,10 @@ fn spline_fit_animation_renders_to_mp4() {
         .expect("render should succeed");
 
     let meta = std::fs::metadata(&out).expect("output file must exist");
-    assert!(meta.len() > 1000, "output file too small: {} bytes", meta.len());
+    assert!(
+        meta.len() > 1000,
+        "output file too small: {} bytes",
+        meta.len()
+    );
     std::fs::remove_file(&out).ok();
 }
