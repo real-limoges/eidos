@@ -4,7 +4,7 @@
 
 - ✅ **v1.0 — Rendering Foundation** — Phases 1–4.6 (shipped 2026-02-25)
 - ✅ **v1.1 — 3D Surface Visualization** — Phases 5–9.1 (shipped 2026-02-26)
-- 📋 **v1.2** — TBD (planned)
+- 🚧 **v1.2 — API Polish & Ergonomics** — Phases 10–12 (in progress)
 
 ## Phases
 
@@ -38,9 +38,51 @@ Full phase details: `.planning/milestones/v1.1-ROADMAP.md`
 
 </details>
 
-### 📋 v1.2 (Planned)
+### 🚧 v1.2 — API Polish & Ergonomics (In Progress)
 
-*No phases defined yet. Run `/gsd:new-milestone` to plan the next milestone.*
+**Milestone Goal:** Eliminate the most common friction points in the eidos API — verbose animation state construction, manual coordinate math, and unpredictable `?` in builder chains.
+
+- [ ] **Phase 10: Infallible Builders** — All primitive builder methods return `Self` with clamped values; no `?` required
+- [ ] **Phase 11: State and Tween Ergonomics** — State types accept `Color` directly; `Tween` fluent builder API
+- [ ] **Phase 12: Coordinate Mapping** — `Axes::map_point()` data-to-pixel coordinate helper
+
+## Phase Details
+
+### Phase 10: Infallible Builders
+**Goal**: All primitive builder methods are infallible — users can chain `.opacity()`, `.stroke()`, `.font_size()` without wrapping results in `?`
+**Depends on**: Phase 9.1 (v1.1 complete)
+**Requirements**: API-01
+**Success Criteria** (what must be TRUE):
+  1. User can chain `.opacity(2.0)` on any primitive and get a valid object back — value is clamped to 1.0, no `Err` returned
+  2. User can chain `.stroke(-5.0)` on any primitive and get a valid object back — value is clamped to 0.0
+  3. User can chain `.font_size(0.0)` on `Text` and get a valid object back — value is clamped to a minimum positive size
+  4. A builder chain like `Circle::new(...).opacity(0.5).stroke(2.0)` compiles and runs without any `?` or `.unwrap()`
+  5. All existing examples and tests that used `?` on builder methods compile after the signature change
+**Plans**: 2 plans
+Plans:
+- [ ] 10-01-PLAN.md — Change all 6 primitive types to return Self from opacity/stroke/font_size/line_height/stroke_width builders
+- [ ] 10-02-PLAN.md — Remove all .unwrap()/.expect()/? from builder call sites in dataviz, examples, and tests
+
+### Phase 11: State and Tween Ergonomics
+**Goal**: Users can construct animation states using `Color` values directly and build `Tween` instances with a fluent method chain instead of struct literals
+**Depends on**: Phase 10
+**Requirements**: ERGO-01, ERGO-02
+**Success Criteria** (what must be TRUE):
+  1. User can write `CircleState { fill: Color::rgb(255, 0, 0), opacity: 1.0, .. }` (or equivalent constructor) without specifying `fill_r`, `fill_g`, `fill_b` separately
+  2. Same `Color`-based construction works for `RectState`, `LineState`, and `TextState`
+  3. User can write `Tween::builder().from(s1).to(s2).start_at(0.0).over(1.0).build()` (or equivalent fluent chain) instead of a struct literal
+  4. Existing code that used struct literal `Tween { .. }` either still compiles or has a clear migration path
+**Plans**: TBD
+
+### Phase 12: Coordinate Mapping
+**Goal**: Users can convert data-space coordinates to pixel coordinates via a single method call on `Axes`, eliminating manual transform math in examples and user code
+**Depends on**: Phase 11
+**Requirements**: COORD-01
+**Success Criteria** (what must be TRUE):
+  1. User can call `axes.map_point(data_x, data_y)` and receive `(pixel_x, pixel_y)` as `(f64, f64)`
+  2. The returned pixel coordinates match what the manual transform in existing examples produces for the same input
+  3. `map_point` is accessible on an `Axes` value after calling `scene.add_axes(...)` — no internal type required
+**Plans**: TBD
 
 ## Progress
 
@@ -60,3 +102,6 @@ Full phase details: `.planning/milestones/v1.1-ROADMAP.md`
 | 8. Scatter Points | v1.1 | 2/2 | Complete | 2026-02-26 |
 | 9. v1.1 Integration Test Coverage | v1.1 | 1/1 | Complete | 2026-02-26 |
 | 9.1. v1.1 SUMMARY Schema and Doc Fixes | v1.1 | 1/1 | Complete | 2026-02-26 |
+| 10. Infallible Builders | v1.2 | 0/2 | Planned | - |
+| 11. State and Tween Ergonomics | v1.2 | 0/? | Not started | - |
+| 12. Coordinate Mapping | v1.2 | 0/? | Not started | - |

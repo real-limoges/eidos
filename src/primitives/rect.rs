@@ -1,5 +1,5 @@
 // src/primitives/rect.rs
-use crate::{Color, EidosError};
+use crate::Color;
 use keyframe_derive::CanTween;
 
 /// A rectangle primitive with top-left origin.
@@ -34,26 +34,16 @@ impl Rect {
         self
     }
 
-    /// Set stroke color and width. Returns Err if width is negative.
-    pub fn stroke(mut self, color: Color, width: f64) -> Result<Self, EidosError> {
-        if width < 0.0 {
-            return Err(EidosError::InvalidConfig(
-                "stroke width must be non-negative".into(),
-            ));
-        }
-        self.stroke = Some((color, width));
-        Ok(self)
+    /// Set stroke color and width. Negative widths are clamped to 0.0.
+    pub fn stroke(mut self, color: Color, width: f64) -> Self {
+        self.stroke = Some((color, width.max(0.0)));
+        self
     }
 
-    /// Set opacity in [0.0, 1.0]. Returns Err if outside range.
-    pub fn opacity(mut self, value: f64) -> Result<Self, EidosError> {
-        if !(0.0..=1.0).contains(&value) {
-            return Err(EidosError::InvalidConfig(
-                "opacity must be in range [0.0, 1.0]".into(),
-            ));
-        }
-        self.opacity = value;
-        Ok(self)
+    /// Set opacity in [0.0, 1.0]. Values outside [0.0, 1.0] are clamped.
+    pub fn opacity(mut self, value: f64) -> Self {
+        self.opacity = value.clamp(0.0, 1.0);
+        self
     }
 
     /// Convert to an svg::node::element::Rectangle node for inclusion in an SVG document.
@@ -107,7 +97,6 @@ impl RectState {
         Rect::new(self.x, self.y, self.width, self.height)
             .fill(crate::Color::rgb(r, g, b))
             .opacity(self.opacity.clamp(0.0, 1.0))
-            .unwrap() // safe: opacity is clamped to valid range
     }
 }
 
@@ -117,15 +106,17 @@ mod tests {
     use crate::Color;
 
     #[test]
-    fn rect_negative_stroke_returns_err() {
+    fn rect_negative_stroke_is_clamped_to_zero() {
         let result = Rect::new(0.0, 0.0, 100.0, 50.0).stroke(Color::WHITE, -1.0);
-        assert!(result.is_err());
+        assert_eq!(result.stroke, Some((Color::WHITE, 0.0)));
     }
 
     #[test]
-    fn rect_opacity_out_of_range_returns_err() {
-        let result = Rect::new(0.0, 0.0, 100.0, 50.0).opacity(1.5);
-        assert!(result.is_err());
+    fn rect_opacity_clamped() {
+        let high = Rect::new(0.0, 0.0, 100.0, 50.0).opacity(1.5);
+        assert_eq!(high.opacity, 1.0);
+        let low = Rect::new(0.0, 0.0, 100.0, 50.0).opacity(-0.5);
+        assert_eq!(low.opacity, 0.0);
     }
 
     #[test]
@@ -133,9 +124,7 @@ mod tests {
         let rect = Rect::new(10.0, 20.0, 200.0, 100.0)
             .fill(Color::BLUE)
             .stroke(Color::WHITE, 2.0)
-            .unwrap()
-            .opacity(0.8)
-            .unwrap();
+            .opacity(0.8);
         assert_eq!(rect.x, 10.0);
         assert_eq!(rect.fill, Some(Color::BLUE));
     }

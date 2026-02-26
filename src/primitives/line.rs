@@ -1,5 +1,5 @@
 // src/primitives/line.rs
-use crate::{Color, EidosError};
+use crate::Color;
 use keyframe_derive::CanTween;
 
 /// A line segment from (x1, y1) to (x2, y2). No fill — only stroke color and width.
@@ -34,26 +34,16 @@ impl Line {
         self
     }
 
-    /// Set the stroke width. Returns Err if width is negative.
-    pub fn stroke_width(mut self, width: f64) -> Result<Self, EidosError> {
-        if width < 0.0 {
-            return Err(EidosError::InvalidConfig(
-                "stroke width must be non-negative".into(),
-            ));
-        }
-        self.stroke_width = width;
-        Ok(self)
+    /// Set the stroke width. Negative widths are clamped to 0.0.
+    pub fn stroke_width(mut self, width: f64) -> Self {
+        self.stroke_width = width.max(0.0);
+        self
     }
 
-    /// Set opacity in [0.0, 1.0]. Returns Err if outside range.
-    pub fn opacity(mut self, value: f64) -> Result<Self, EidosError> {
-        if !(0.0..=1.0).contains(&value) {
-            return Err(EidosError::InvalidConfig(
-                "opacity must be in range [0.0, 1.0]".into(),
-            ));
-        }
-        self.opacity = value;
-        Ok(self)
+    /// Set opacity in [0.0, 1.0]. Values outside [0.0, 1.0] are clamped.
+    pub fn opacity(mut self, value: f64) -> Self {
+        self.opacity = value.clamp(0.0, 1.0);
+        self
     }
 
     /// Convert to an svg::node::element::Line node for inclusion in an SVG document.
@@ -95,9 +85,7 @@ impl LineState {
         Line::new(self.x1, self.y1, self.x2, self.y2)
             .stroke_color(crate::Color::rgb(r, g, b))
             .stroke_width(self.stroke_width.max(0.0))
-            .unwrap() // safe: stroke_width clamped to non-negative
             .opacity(self.opacity.clamp(0.0, 1.0))
-            .unwrap() // safe: opacity clamped to valid range
     }
 }
 
@@ -107,15 +95,17 @@ mod tests {
     use crate::Color;
 
     #[test]
-    fn line_negative_stroke_returns_err() {
+    fn line_negative_stroke_is_clamped() {
         let result = Line::new(0.0, 0.0, 100.0, 100.0).stroke_width(-1.0);
-        assert!(result.is_err());
+        assert_eq!(result.stroke_width, 0.0);
     }
 
     #[test]
-    fn line_opacity_out_of_range_returns_err() {
-        let result = Line::new(0.0, 0.0, 100.0, 100.0).opacity(1.5);
-        assert!(result.is_err());
+    fn line_opacity_clamped() {
+        let high = Line::new(0.0, 0.0, 100.0, 100.0).opacity(1.5);
+        assert_eq!(high.opacity, 1.0);
+        let low = Line::new(0.0, 0.0, 100.0, 100.0).opacity(-0.5);
+        assert_eq!(low.opacity, 0.0);
     }
 
     #[test]
@@ -123,9 +113,7 @@ mod tests {
         let l = Line::new(0.0, 0.0, 100.0, 100.0)
             .stroke_color(Color::RED)
             .stroke_width(2.0)
-            .unwrap()
-            .opacity(0.8)
-            .unwrap();
+            .opacity(0.8);
         assert_eq!(l.x1, 0.0);
         assert_eq!(l.x2, 100.0);
         assert_eq!(l.stroke_color, Color::RED);
