@@ -30,6 +30,43 @@ impl SceneBuilder {
         }
         self
     }
+
+    /// Decompose a SurfacePlot into its constituent primitives and add them all to the scene.
+    ///
+    /// Uses the painter's algorithm internally (see SurfacePlot::to_primitives).
+    /// Equivalent to calling add() for each primitive in plot.to_primitives(camera, viewport).
+    pub fn add_surface(
+        &mut self,
+        plot: &crate::dataviz::SurfacePlot,
+        camera: &crate::dataviz::Camera,
+        viewport: (u32, u32),
+    ) -> &mut Self {
+        for prim in plot.to_primitives(camera, viewport) {
+            self.primitives.push(prim);
+        }
+        self
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::dataviz::{SurfacePlot, Camera};
+
+    #[test]
+    fn add_surface_adds_primitives_to_builder() {
+        // Flat 2x2 grid with normal pointing +z — visible from any above-horizon camera
+        let plot = SurfacePlot::new(
+            vec![0.0, 1.0, 0.0, 1.0],
+            vec![0.0, 0.0, 1.0, 1.0],
+            vec![0.0, 0.0, 0.0, 0.0],
+            2, 2,
+        );
+        let camera = Camera::new(45.0, 30.0, 3.0);
+        let mut sb = SceneBuilder { primitives: vec![] };
+        sb.add_surface(&plot, &camera, (800, 600));
+        assert!(!sb.primitives.is_empty(), "add_surface should produce at least one primitive");
+    }
 }
 
 impl Scene {
