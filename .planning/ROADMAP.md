@@ -28,7 +28,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 **Milestone Goal:** Add 3D perspective mesh rendering with fitting animation, camera rotation, and data point scatter — enabling animated GAM (and ML) surface visualizations.
 
 - [x] **Phase 5: Camera and Projection Foundation** - Perspective projection math, Camera/CameraState structs, and the data-to-screen transform chain (completed 2026-02-25)
-- [ ] **Phase 6: Static 3D Surface Rendering** - Wireframe mesh, shaded surface with z-height colormap, and 3D cartesian axes
+- [x] **Phase 6: Static 3D Surface Rendering** - Wireframe mesh, shaded surface with z-height colormap, and 3D cartesian axes (completed 2026-02-26)
 - [ ] **Phase 7: Surface and Camera Animation** - Surface morphing from flat to fitted shape, and camera orbit animation
 - [ ] **Phase 8: Scatter Points** - 3D scatter point rendering with depth-based opacity and fade-in animation
 
@@ -99,6 +99,6 @@ Plans:
 | 4.5. GAM Visualization Completion | v1.0 | 1/1 | Complete | 2026-02-25 |
 | 4.6. v1.0 API Ergonomics Cleanup | v1.0 | 1/1 | Complete | 2026-02-25 |
 | 5. Camera and Projection Foundation | v1.1 | 3/3 | Complete | 2026-02-25 |
-| 6. Static 3D Surface Rendering | 2/3 | In Progress|  | - |
+| 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
 | 7. Surface and Camera Animation | v1.1 | 0/? | Not started | - |
 | 8. Scatter Points | v1.1 | 0/? | Not started | - |

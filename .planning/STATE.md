@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 3D Surface Visualization
 status: unknown
-last_updated: "2026-02-26T01:51:11.481Z"
+last_updated: "2026-02-26T01:56:08.000Z"
 progress:
   total_phases: 2
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 6
-  completed_plans: 5
+  completed_plans: 6
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 6 — Static 3D Surface Rendering (Plan 02 complete — to_primitives(), SceneBuilder::add_surface(), eidos::RenderMode re-export)
+**Current focus:** Phase 6 COMPLETE — Static 3D Surface Rendering (Plans 01-03 done: viridis colormap, camera, surface_plot builder; to_primitives() painter's algorithm; 3D axis rendering with tick marks and labels)
 
 ## Current Position
 
-Phase: 6 of 8 (Static 3D Surface Rendering)
-Plan: 2 complete (to_primitives() painter's algorithm, SceneBuilder::add_surface(), RenderMode crate root re-export)
-Status: In progress
-Last activity: 2026-02-26 — 06-02 complete — painter's algorithm rendering loop, 117 tests passing
+Phase: 6 of 8 (Static 3D Surface Rendering) — COMPLETE
+Plan: 3 complete (3D axis rendering integrated into to_primitives(), far_floor_corner quadrant selection, draw_axes() helper)
+Status: Phase 6 complete — SURF-02, SURF-03, SURF-04 all satisfied
+Last activity: 2026-02-26 — 06-03 complete — 3D axis rendering, 101 lib tests passing
 
-Progress: [████░░░░░░] ~40%
+Progress: [██████░░░░] ~60%
 
 ## Performance Metrics
 
@@ -53,6 +53,7 @@ Progress: [████░░░░░░] ~40%
 *Updated after each plan completion*
 | Phase 06 P01 | 14 | 2 tasks | 4 files |
 | Phase 06 P02 | 4 | 2 tasks | 3 files |
+| Phase 06 P03 | 3 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -91,17 +92,23 @@ Decisions from 05-03 execution:
 - [Phase 06]: Test data for to_primitives must use flat surface (all z=0) for predictable face normals — slanted surfaces have normals sensitive to camera angle
 - [Phase 06]: Painter's algorithm: precompute projected corner grid, backface cull via cross-product normal + dot product, sort back-to-front by squared centroid distance
 
+Decisions from 06-03 execution:
+
+- [06-03]: far_floor_corner uses integer cast (az as u32) for 4-quadrant match — avoids floating-point edge cases at boundaries; 360.0 normalizes to 0 via modulo
+- [06-03]: tick_precision guard: step <= 0.0 returns 0 — prevents log10(0) = -inf panic when surface z range is degenerate (all values equal)
+- [06-03]: Stale tests updated: to_primitives now always includes axis primitives (Line + Text) — tests assert Bezier count (face count) instead of total count
+
 ### Pending Todos
 
 None yet.
 
 ### Blockers/Concerns
 
-- [Phase 6]: 3D axis bounding-box edge selection sub-problem has sparse SVG-specific documentation — research spike recommended before Plan 06-03
+- [Phase 6]: 3D axis bounding-box edge selection RESOLVED — quadrant-based floor corner selection implemented, works correctly
 - [Phase 6]: 30x30 performance benchmark RESOLVED — to_primitives() runs sub-millisecond (well under 500ms limit); no mitigation needed
 
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 06-02-PLAN.md — to_primitives() painter's algorithm, SceneBuilder::add_surface(), eidos::RenderMode re-export, 117 tests passing.
+Stopped at: Completed 06-03-PLAN.md — 3D axis rendering integrated into to_primitives(), far_floor_corner quadrant selection, draw_axes() helper, 101 lib tests passing. Phase 6 COMPLETE — SURF-02, SURF-03, SURF-04 all satisfied.
 Resume file: None
