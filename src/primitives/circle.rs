@@ -60,9 +60,7 @@ impl Circle {
         };
 
         if let Some((color, width)) = self.stroke {
-            el = el
-                .set("stroke", color.to_hex())
-                .set("stroke-width", width);
+            el = el.set("stroke", color.to_hex()).set("stroke-width", width);
         }
 
         el
@@ -83,6 +81,21 @@ pub struct CircleState {
 }
 
 impl CircleState {
+    /// Construct a CircleState from position, radius, fill color, and opacity.
+    ///
+    /// Color channels are stored as f64 (0.0..=255.0) for tween interpolation.
+    pub fn new(cx: f64, cy: f64, r: f64, fill: Color, opacity: f64) -> Self {
+        CircleState {
+            cx,
+            cy,
+            r,
+            fill_r: fill.r as f64,
+            fill_g: fill.g as f64,
+            fill_b: fill.b as f64,
+            opacity,
+        }
+    }
+
     /// Build a Circle from this interpolated state.
     /// Color channels are clamped to [0, 255] then cast to u8.
     /// Opacity is clamped to [0.0, 1.0].
@@ -113,6 +126,15 @@ mod tests {
         assert_eq!(high.opacity, 1.0);
         let low = Circle::new(50.0, 50.0, 30.0).opacity(-0.5);
         assert_eq!(low.opacity, 0.0);
+    }
+
+    #[test]
+    fn circle_state_new_decomposes_color() {
+        let s = CircleState::new(10.0, 20.0, 30.0, Color::RED, 0.8);
+        assert_eq!(s.fill_r, 255.0);
+        assert_eq!(s.fill_g, 0.0);
+        assert_eq!(s.fill_b, 0.0);
+        assert_eq!(s.opacity, 0.8);
     }
 
     #[test]

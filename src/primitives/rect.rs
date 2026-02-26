@@ -5,8 +5,8 @@ use keyframe_derive::CanTween;
 /// A rectangle primitive with top-left origin.
 #[derive(Debug, Clone)]
 pub struct Rect {
-    pub x: f64,      // top-left x
-    pub y: f64,      // top-left y
+    pub x: f64, // top-left x
+    pub y: f64, // top-left y
     pub width: f64,
     pub height: f64,
     pub fill: Option<Color>,
@@ -63,9 +63,7 @@ impl Rect {
         };
 
         if let Some((color, width)) = self.stroke {
-            el = el
-                .set("stroke", color.to_hex())
-                .set("stroke-width", width);
+            el = el.set("stroke", color.to_hex()).set("stroke-width", width);
         }
 
         el
@@ -87,6 +85,22 @@ pub struct RectState {
 }
 
 impl RectState {
+    /// Construct a RectState from position, dimensions, fill color, and opacity.
+    ///
+    /// Color channels are stored as f64 (0.0..=255.0) for tween interpolation.
+    pub fn new(x: f64, y: f64, width: f64, height: f64, fill: Color, opacity: f64) -> Self {
+        RectState {
+            x,
+            y,
+            width,
+            height,
+            fill_r: fill.r as f64,
+            fill_g: fill.g as f64,
+            fill_b: fill.b as f64,
+            opacity,
+        }
+    }
+
     /// Build a Rect from this interpolated state.
     /// Color channels are clamped to [0, 255] then cast to u8.
     /// Opacity is clamped to [0.0, 1.0].
@@ -117,6 +131,15 @@ mod tests {
         assert_eq!(high.opacity, 1.0);
         let low = Rect::new(0.0, 0.0, 100.0, 50.0).opacity(-0.5);
         assert_eq!(low.opacity, 0.0);
+    }
+
+    #[test]
+    fn rect_state_new_decomposes_color() {
+        let s = RectState::new(10.0, 20.0, 200.0, 100.0, Color::BLUE, 0.7);
+        assert_eq!(s.fill_r, 0.0);
+        assert_eq!(s.fill_g, 0.0);
+        assert_eq!(s.fill_b, 255.0);
+        assert_eq!(s.opacity, 0.7);
     }
 
     #[test]

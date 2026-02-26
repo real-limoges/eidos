@@ -76,6 +76,31 @@ pub struct LineState {
 }
 
 impl LineState {
+    /// Construct a LineState from endpoints, stroke color, stroke width, and opacity.
+    ///
+    /// Color channels are stored as f64 (0.0..=255.0) for tween interpolation.
+    pub fn new(
+        x1: f64,
+        y1: f64,
+        x2: f64,
+        y2: f64,
+        stroke: Color,
+        stroke_width: f64,
+        opacity: f64,
+    ) -> Self {
+        LineState {
+            x1,
+            y1,
+            x2,
+            y2,
+            stroke_r: stroke.r as f64,
+            stroke_g: stroke.g as f64,
+            stroke_b: stroke.b as f64,
+            stroke_width,
+            opacity,
+        }
+    }
+
     /// Build a Line from this interpolated state.
     /// Color channels are clamped to [0, 255] then cast to u8.
     pub fn to_line(&self) -> Line {
@@ -106,6 +131,16 @@ mod tests {
         assert_eq!(high.opacity, 1.0);
         let low = Line::new(0.0, 0.0, 100.0, 100.0).opacity(-0.5);
         assert_eq!(low.opacity, 0.0);
+    }
+
+    #[test]
+    fn line_state_new_decomposes_color() {
+        let s = LineState::new(0.0, 0.0, 100.0, 100.0, Color::GREEN, 3.0, 0.9);
+        assert_eq!(s.stroke_r, 0.0);
+        assert_eq!(s.stroke_g, 255.0);
+        assert_eq!(s.stroke_b, 0.0);
+        assert_eq!(s.stroke_width, 3.0);
+        assert_eq!(s.opacity, 0.9);
     }
 
     #[test]

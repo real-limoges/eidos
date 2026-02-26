@@ -129,9 +129,7 @@ impl Text {
 
             // Reset x per tspan so multi-line alignment is correct (each line
             // is independently anchored to self.x via text-anchor).
-            let tspan = TSpan::new(line.to_string())
-                .set("x", self.x)
-                .set("dy", dy);
+            let tspan = TSpan::new(line.to_string()).set("x", self.x).set("dy", dy);
 
             text_el = text_el.add(tspan);
         }
@@ -155,6 +153,21 @@ pub struct TextState {
 }
 
 impl TextState {
+    /// Construct a TextState from position, font size, fill color, and opacity.
+    ///
+    /// Color channels are stored as f64 (0.0..=255.0) for tween interpolation.
+    pub fn new(x: f64, y: f64, font_size: f64, fill: Color, opacity: f64) -> Self {
+        TextState {
+            x,
+            y,
+            font_size,
+            fill_r: fill.r as f64,
+            fill_g: fill.g as f64,
+            fill_b: fill.b as f64,
+            opacity,
+        }
+    }
+
     /// Build a Text from this interpolated state. Content must be supplied separately
     /// (strings are not interpolatable — use a fixed &str from the animation closure).
     pub fn to_text(&self, content: &str) -> crate::primitives::Text {
@@ -189,6 +202,16 @@ mod tests {
     fn text_zero_line_height_is_clamped() {
         let result = Text::new(10.0, 20.0, "hello").line_height(0.0);
         assert_eq!(result.line_height, 0.1);
+    }
+
+    #[test]
+    fn text_state_new_decomposes_color() {
+        let s = TextState::new(50.0, 100.0, 24.0, Color::YELLOW, 0.5);
+        assert_eq!(s.fill_r, 255.0);
+        assert_eq!(s.fill_g, 255.0);
+        assert_eq!(s.fill_b, 0.0);
+        assert_eq!(s.font_size, 24.0);
+        assert_eq!(s.opacity, 0.5);
     }
 
     #[test]
