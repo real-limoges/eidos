@@ -1,27 +1,27 @@
 // src/dataviz/axes.rs
 
-use crate::primitives::{Primitive, Line, Text, Bezier};
-use crate::Color;
-use crate::dataviz::DataCurve;
 use crate::dataviz::ConfidenceBand;
+use crate::dataviz::DataCurve;
+use crate::primitives::{Bezier, Line, Primitive, Text};
+use crate::Color;
 
 const TICK_LENGTH: f64 = 6.0;
-const TICK_LABEL_OFFSET: f64 = 14.0;   // pixels from tick end to label center
-const TITLE_OFFSET: f64 = 36.0;        // pixels from axis to title center
-const GRID_OPACITY: f64 = 0.15;        // subtle grid lines
+const TICK_LABEL_OFFSET: f64 = 14.0; // pixels from tick end to label center
+const TITLE_OFFSET: f64 = 36.0; // pixels from axis to title center
+const GRID_OPACITY: f64 = 0.15; // subtle grid lines
 const GRID_STROKE_WIDTH: f64 = 1.0;
 const AXIS_STROKE_WIDTH: f64 = 1.5;
 const TICK_STROKE_WIDTH: f64 = 1.0;
 const TICK_LABEL_SIZE: f64 = 11.0;
 const AXIS_TITLE_SIZE: f64 = 13.0;
-const AUTO_PADDING_FRAC: f64 = 0.07;  // 7% — within locked 5–10% range
-const TARGET_TICK_COUNT: usize = 6;    // within locked 5–10 range
+const AUTO_PADDING_FRAC: f64 = 0.07; // 7% — within locked 5–10% range
+const TARGET_TICK_COUNT: usize = 6; // within locked 5–10 range
 
 /// Specifies the range for one axis — either automatic (fit to data) or explicit.
 #[derive(Debug, Clone)]
 pub enum AxisRange {
     Auto,
-    Explicit(f64, f64),  // (min, max)
+    Explicit(f64, f64), // (min, max)
 }
 
 /// A Cartesian plot container.
@@ -48,7 +48,10 @@ impl Axes {
     /// Create a new Axes with the given scene bounding box. Auto-ranges by default.
     pub fn new(x: f64, y: f64, width: f64, height: f64) -> Self {
         Axes {
-            x, y, width, height,
+            x,
+            y,
+            width,
+            height,
             x_range: AxisRange::Auto,
             y_range: AxisRange::Auto,
             x_title: None,
@@ -111,11 +114,27 @@ impl Axes {
     /// When no data is present, returns a fallback range (-1.0, 1.0, -1.0, 1.0).
     pub fn plot_bounds(&self) -> (f64, f64, f64, f64) {
         // Step 1: Resolve data ranges (mirrors to_primitives() Steps 1-2)
-        let all_x: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.0))
-            .chain(self.bands.iter().flat_map(|b| b.upper_points.iter().chain(b.lower_points.iter()).map(|p| p.0)))
+        let all_x: Vec<f64> = self
+            .curves
+            .iter()
+            .flat_map(|c| c.points.iter().map(|p| p.0))
+            .chain(self.bands.iter().flat_map(|b| {
+                b.upper_points
+                    .iter()
+                    .chain(b.lower_points.iter())
+                    .map(|p| p.0)
+            }))
             .collect();
-        let all_y: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.1))
-            .chain(self.bands.iter().flat_map(|b| b.upper_points.iter().chain(b.lower_points.iter()).map(|p| p.1)))
+        let all_y: Vec<f64> = self
+            .curves
+            .iter()
+            .flat_map(|c| c.points.iter().map(|p| p.1))
+            .chain(self.bands.iter().flat_map(|b| {
+                b.upper_points
+                    .iter()
+                    .chain(b.lower_points.iter())
+                    .map(|p| p.1)
+            }))
             .collect();
 
         let (x_data_min, x_data_max) = compute_range(&all_x, AUTO_PADDING_FRAC);
@@ -142,17 +161,63 @@ impl Axes {
         (x_axis_min, x_axis_max, y_axis_min, y_axis_max)
     }
 
+    /// Convert a data-space point to pixel coordinates.
+    ///
+    /// Calls [`plot_bounds()`](Self::plot_bounds) internally to get the tick-adjusted
+    /// data range, then maps `(data_x, data_y)` to pixel `(px, py)` using the same
+    /// formula that [`to_primitives()`](Self::to_primitives) uses for curve rendering.
+    ///
+    /// SVG Y-axis inversion is handled automatically: data Y increases upward,
+    /// pixel Y increases downward.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use eidos::{Axes, DataCurve};
+    ///
+    /// let curve = DataCurve::new(vec![(0.0, 0.0), (10.0, 5.0)]).unwrap();
+    /// let axes = Axes::new(80.0, 60.0, 800.0, 500.0)
+    ///     .x_range(0.0, 10.0)
+    ///     .y_range(0.0, 5.0)
+    ///     .add_curve(curve);
+    ///
+    /// let (px, py) = axes.map_point(5.0, 2.5);
+    /// // px is in [80.0, 880.0], py is in [60.0, 560.0]
+    /// ```
+    pub fn map_point(&self, data_x: f64, data_y: f64) -> (f64, f64) {
+        let (x_min, x_max, y_min, y_max) = self.plot_bounds();
+        let px = map_x(data_x, x_min, x_max, self.x, self.width);
+        let py = map_y(data_y, y_min, y_max, self.y, self.height);
+        (px, py)
+    }
+
     /// Decompose the Axes into constituent primitives for insertion into a SceneBuilder.
     ///
     /// Produces: axis lines (X, Y), tick marks, tick labels, grid lines, curve paths.
     /// Curves are converted to Bezier paths with Catmull-Rom spline in visual (pixel) space.
     pub fn to_primitives(&self) -> Vec<Primitive> {
         // --- Step 1: Resolve data ranges ---
-        let all_x: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.0))
-            .chain(self.bands.iter().flat_map(|b| b.upper_points.iter().chain(b.lower_points.iter()).map(|p| p.0)))
+        let all_x: Vec<f64> = self
+            .curves
+            .iter()
+            .flat_map(|c| c.points.iter().map(|p| p.0))
+            .chain(self.bands.iter().flat_map(|b| {
+                b.upper_points
+                    .iter()
+                    .chain(b.lower_points.iter())
+                    .map(|p| p.0)
+            }))
             .collect();
-        let all_y: Vec<f64> = self.curves.iter().flat_map(|c| c.points.iter().map(|p| p.1))
-            .chain(self.bands.iter().flat_map(|b| b.upper_points.iter().chain(b.lower_points.iter()).map(|p| p.1)))
+        let all_y: Vec<f64> = self
+            .curves
+            .iter()
+            .flat_map(|c| c.points.iter().map(|p| p.1))
+            .chain(self.bands.iter().flat_map(|b| {
+                b.upper_points
+                    .iter()
+                    .chain(b.lower_points.iter())
+                    .map(|p| p.1)
+            }))
             .collect();
 
         let (x_data_min, x_data_max) = compute_range(&all_x, AUTO_PADDING_FRAC);
@@ -172,8 +237,16 @@ impl Axes {
         let y_ticks = generate_ticks(y_min, y_max, TARGET_TICK_COUNT);
 
         // Tick step for label precision
-        let x_step = if x_ticks.len() >= 2 { x_ticks[1] - x_ticks[0] } else { 1.0 };
-        let y_step = if y_ticks.len() >= 2 { y_ticks[1] - y_ticks[0] } else { 1.0 };
+        let x_step = if x_ticks.len() >= 2 {
+            x_ticks[1] - x_ticks[0]
+        } else {
+            1.0
+        };
+        let y_step = if y_ticks.len() >= 2 {
+            y_ticks[1] - y_ticks[0]
+        } else {
+            1.0
+        };
 
         // Determine actual visual axis range from ticks (Heckbert graph_min/graph_max)
         let x_axis_min = x_ticks.first().copied().unwrap_or(x_min);
@@ -283,15 +356,29 @@ impl Axes {
 
         // --- Step 6.5: Confidence bands (rendered BELOW data curves) ---
         for band in &self.bands {
-            if band.upper_points.len() < 2 || band.lower_points.len() < 2 { continue; }
-            let visual_upper: Vec<(f64, f64)> = band.upper_points.iter().map(|&(dx, dy)| {
-                (map_x(dx, x_axis_min, x_axis_max, self.x, self.width),
-                 map_y(dy, y_axis_min, y_axis_max, self.y, self.height))
-            }).collect();
-            let visual_lower: Vec<(f64, f64)> = band.lower_points.iter().map(|&(dx, dy)| {
-                (map_x(dx, x_axis_min, x_axis_max, self.x, self.width),
-                 map_y(dy, y_axis_min, y_axis_max, self.y, self.height))
-            }).collect();
+            if band.upper_points.len() < 2 || band.lower_points.len() < 2 {
+                continue;
+            }
+            let visual_upper: Vec<(f64, f64)> = band
+                .upper_points
+                .iter()
+                .map(|&(dx, dy)| {
+                    (
+                        map_x(dx, x_axis_min, x_axis_max, self.x, self.width),
+                        map_y(dy, y_axis_min, y_axis_max, self.y, self.height),
+                    )
+                })
+                .collect();
+            let visual_lower: Vec<(f64, f64)> = band
+                .lower_points
+                .iter()
+                .map(|&(dx, dy)| {
+                    (
+                        map_x(dx, x_axis_min, x_axis_max, self.x, self.width),
+                        map_y(dy, y_axis_min, y_axis_max, self.y, self.height),
+                    )
+                })
+                .collect();
             let bez = band.to_bezier_path(&visual_upper, &visual_lower);
             prims.push(bez.into());
         }
@@ -299,13 +386,19 @@ impl Axes {
         // --- Step 7: Data curves ---
         // Map each curve's data points to visual space FIRST, then compute Catmull-Rom.
         for curve in &self.curves {
-            if curve.points.is_empty() { continue; }
-            let visual_pts: Vec<(f64, f64)> = curve.points.iter().map(|&(dx, dy)| {
-                (
-                    map_x(dx, x_axis_min, x_axis_max, self.x, self.width),
-                    map_y(dy, y_axis_min, y_axis_max, self.y, self.height),
-                )
-            }).collect();
+            if curve.points.is_empty() {
+                continue;
+            }
+            let visual_pts: Vec<(f64, f64)> = curve
+                .points
+                .iter()
+                .map(|&(dx, dy)| {
+                    (
+                        map_x(dx, x_axis_min, x_axis_max, self.x, self.width),
+                        map_y(dy, y_axis_min, y_axis_max, self.y, self.height),
+                    )
+                })
+                .collect();
 
             if visual_pts.len() >= 2 {
                 let bez = curve.to_bezier_path(&visual_pts);
@@ -385,14 +478,32 @@ pub(crate) fn generate_ticks(data_min: f64, data_max: f64, target_count: usize) 
 /// Heckbert nice-number rounding. If round=true, rounds to nearest nice number;
 /// if round=false, returns ceiling nice number (used for range).
 fn nice_num(x: f64, round: bool) -> f64 {
-    if x <= 0.0 { return x; }
+    if x <= 0.0 {
+        return x;
+    }
     let exp = x.log10().floor();
-    let f = x / 10f64.powf(exp);  // fractional part in [1, 10)
+    let f = x / 10f64.powf(exp); // fractional part in [1, 10)
     let nice_f = if round {
-        if f < 1.5 { 1.0 } else if f < 3.0 { 2.0 } else if f < 7.0 { 5.0 } else { 10.0 }
+        if f < 1.5 {
+            1.0
+        } else if f < 3.0 {
+            2.0
+        } else if f < 7.0 {
+            5.0
+        } else {
+            10.0
+        }
     } else {
         #[allow(clippy::collapsible_else_if)]
-        if f <= 1.0 { 1.0 } else if f <= 2.0 { 2.0 } else if f <= 5.0 { 5.0 } else { 10.0 }
+        if f <= 1.0 {
+            1.0
+        } else if f <= 2.0 {
+            2.0
+        } else if f <= 5.0 {
+            5.0
+        } else {
+            10.0
+        }
     };
     nice_f * 10f64.powf(exp)
 }
@@ -401,8 +512,14 @@ fn nice_num(x: f64, round: bool) -> f64 {
 /// step=1.0 → 0 decimals; step=0.1 → 1 decimal; step=0.01 → 2 decimals.
 /// Degenerate step (≤ 0): returns 0 (integer display) as a safe fallback.
 pub(crate) fn tick_precision(step: f64) -> usize {
-    if step <= 0.0 { return 0; }
-    if step >= 1.0 { 0 } else { (-step.log10().floor()).clamp(0.0, 15.0) as usize }
+    if step <= 0.0 {
+        return 0;
+    }
+    if step >= 1.0 {
+        0
+    } else {
+        (-step.log10().floor()).clamp(0.0, 15.0) as usize
+    }
 }
 
 /// Format a tick value with appropriate decimal precision to avoid floating-point noise.
@@ -419,7 +536,11 @@ mod tests {
     #[test]
     fn generate_ticks_produces_reasonable_count() {
         let ticks = generate_ticks(0.0, 10.0, 6);
-        assert!(ticks.len() >= 2 && ticks.len() <= 12, "tick count was {}", ticks.len());
+        assert!(
+            ticks.len() >= 2 && ticks.len() <= 12,
+            "tick count was {}",
+            ticks.len()
+        );
     }
 
     #[test]
@@ -427,8 +548,11 @@ mod tests {
         let ticks = generate_ticks(0.0, 100.0, 6);
         // All ticks should be multiples of 20 (nice step for 0–100 range, target 6)
         for t in &ticks {
-            assert!((t % 20.0).abs() < 1e-6 || (t % 10.0).abs() < 1e-6,
-                "tick {} is not a round number", t);
+            assert!(
+                (t % 20.0).abs() < 1e-6 || (t % 10.0).abs() < 1e-6,
+                "tick {} is not a round number",
+                t
+            );
         }
     }
 
@@ -436,7 +560,7 @@ mod tests {
     fn format_tick_avoids_floating_point_noise() {
         // 0.1 + 0.1 + 0.1 != 0.3 exactly — format_tick must use precision
         let step = 0.1f64;
-        let val = 0.1 + 0.1 + 0.1;  // raw f64: ~0.30000000000000004
+        let val = 0.1 + 0.1 + 0.1; // raw f64: ~0.30000000000000004
         let formatted = format_tick(val, step);
         assert_eq!(formatted, "0.3", "got: {}", formatted);
     }
@@ -477,14 +601,22 @@ mod tests {
     fn map_y_inverts_axis_data_min_to_bottom() {
         // data_min should map to axes_y + height (bottom pixel)
         let py = map_y(0.0, 0.0, 10.0, 100.0, 500.0);
-        assert!((py - 600.0).abs() < 1e-6, "expected 600.0 (bottom), got {}", py);
+        assert!(
+            (py - 600.0).abs() < 1e-6,
+            "expected 600.0 (bottom), got {}",
+            py
+        );
     }
 
     #[test]
     fn map_y_inverts_axis_data_max_to_top() {
         // data_max should map to axes_y (top pixel)
         let py = map_y(10.0, 0.0, 10.0, 100.0, 500.0);
-        assert!((py - 100.0).abs() < 1e-6, "expected 100.0 (top), got {}", py);
+        assert!(
+            (py - 100.0).abs() < 1e-6,
+            "expected 100.0 (top), got {}",
+            py
+        );
     }
 
     #[test]
@@ -495,7 +627,11 @@ mod tests {
         let axes = Axes::new(100.0, 100.0, 800.0, 500.0).add_curve(curve);
         let prims = axes.to_primitives();
         // Should have at least: 2 axis lines + ticks + labels + grid lines + 1 curve path
-        assert!(prims.len() > 10, "expected >10 primitives, got {}", prims.len());
+        assert!(
+            prims.len() > 10,
+            "expected >10 primitives, got {}",
+            prims.len()
+        );
     }
 
     #[test]
@@ -523,9 +659,21 @@ mod tests {
             .add_curve(curve);
         let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
         // Heckbert on [0.0, 10.0] with target 6 -> ticks 0, 2, 4, 6, 8, 10
-        assert!((x_min - 0.0).abs() < 1e-6, "x_min should be 0.0, got {}", x_min);
-        assert!((x_max - 10.0).abs() < 1e-6, "x_max should be 10.0, got {}", x_max);
-        assert!(y_min <= -1.0 + 1e-6, "y_min should be <= -1.0, got {}", y_min);
+        assert!(
+            (x_min - 0.0).abs() < 1e-6,
+            "x_min should be 0.0, got {}",
+            x_min
+        );
+        assert!(
+            (x_max - 10.0).abs() < 1e-6,
+            "x_max should be 10.0, got {}",
+            x_max
+        );
+        assert!(
+            y_min <= -1.0 + 1e-6,
+            "y_min should be <= -1.0, got {}",
+            y_min
+        );
         assert!(y_max >= 1.0 - 1e-6, "y_max should be >= 1.0, got {}", y_max);
     }
 
@@ -542,11 +690,95 @@ mod tests {
         // Point at data (5.0, _) should map to pixel x in the middle of the plot area
         let px = axes.x + (5.0 - x_min) / (x_max - x_min) * axes.width;
         assert!(px > axes.x, "pixel x should be within plot area left edge");
-        assert!(px < axes.x + axes.width, "pixel x should be within plot area right edge");
+        assert!(
+            px < axes.x + axes.width,
+            "pixel x should be within plot area right edge"
+        );
         // Bounds should contain the explicit range
         assert!(x_min <= 0.0 + 1e-6, "x_min should be <= 0.0");
         assert!(x_max >= 10.0 - 1e-6, "x_max should be >= 10.0");
         assert!(y_min <= -0.5 + 1e-6, "y_min should be <= -0.5");
         assert!(y_max >= 1.5 - 1e-6, "y_max should be >= 1.5");
+    }
+
+    #[test]
+    fn map_point_matches_manual_formula() {
+        use crate::dataviz::DataCurve;
+        let data = vec![(0.0, -1.0), (10.0, 1.0)];
+        let curve = DataCurve::new(data).unwrap();
+        let axes = Axes::new(80.0, 60.0, 800.0, 500.0)
+            .x_range(0.0, 10.0)
+            .y_range(-1.0, 1.0)
+            .add_curve(curve);
+
+        // Compute expected pixel coords using manual formula
+        let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
+        let expected_px = map_x(5.0, x_min, x_max, axes.x, axes.width);
+        let expected_py = map_y(0.0, y_min, y_max, axes.y, axes.height);
+
+        let (px, py) = axes.map_point(5.0, 0.0);
+        assert!(
+            (px - expected_px).abs() < 1e-10,
+            "px mismatch: got {}, expected {}",
+            px,
+            expected_px
+        );
+        assert!(
+            (py - expected_py).abs() < 1e-10,
+            "py mismatch: got {}, expected {}",
+            py,
+            expected_py
+        );
+    }
+
+    #[test]
+    fn map_point_corners() {
+        use crate::dataviz::DataCurve;
+        let data = vec![(0.0, 0.0), (10.0, 5.0)];
+        let curve = DataCurve::new(data).unwrap();
+        let axes = Axes::new(100.0, 50.0, 800.0, 600.0)
+            .x_range(0.0, 10.0)
+            .y_range(0.0, 5.0)
+            .add_curve(curve);
+
+        let (x_min, x_max, y_min, y_max) = axes.plot_bounds();
+
+        // Bottom-left corner: data (x_min, y_min) -> pixel (left, bottom)
+        let (px_bl, py_bl) = axes.map_point(x_min, y_min);
+        assert!(
+            (px_bl - 100.0).abs() < 1e-6,
+            "bottom-left px should be ~100.0, got {}",
+            px_bl
+        );
+        assert!(
+            (py_bl - 650.0).abs() < 1e-6,
+            "bottom-left py should be ~650.0, got {}",
+            py_bl
+        );
+
+        // Top-right corner: data (x_max, y_max) -> pixel (right, top)
+        let (px_tr, py_tr) = axes.map_point(x_max, y_max);
+        assert!(
+            (px_tr - 900.0).abs() < 1e-6,
+            "top-right px should be ~900.0, got {}",
+            px_tr
+        );
+        assert!(
+            (py_tr - 50.0).abs() < 1e-6,
+            "top-right py should be ~50.0, got {}",
+            py_tr
+        );
+    }
+
+    #[test]
+    fn map_point_degenerate_range() {
+        use crate::dataviz::DataCurve;
+        // Two identical points triggers degenerate range (span < 1e-10) in compute_range
+        let curve = DataCurve::new(vec![(5.0, 5.0), (5.0, 5.0)]).unwrap();
+        let axes = Axes::new(100.0, 50.0, 800.0, 600.0).add_curve(curve);
+
+        let (px, py) = axes.map_point(5.0, 5.0);
+        assert!(px.is_finite(), "px should be finite, got {}", px);
+        assert!(py.is_finite(), "py should be finite, got {}", py);
     }
 }
