@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 3D Surface Visualization
 status: unknown
-last_updated: "2026-02-26T12:14:45.186Z"
+last_updated: "2026-02-26T12:54:19.349Z"
 progress:
-  total_phases: 4
-  completed_phases: 4
-  total_plans: 10
-  completed_plans: 10
+  total_phases: 6
+  completed_phases: 6
+  total_plans: 12
+  completed_plans: 12
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 9 COMPLETE — v1.1 integration test coverage. SURF-01, SURF-02, SURF-04 audit gaps closed. Full suite passing.
+**Current focus:** Phase 09.1 COMPLETE — v1.1 summary schema and doc fixes. 08-01-SUMMARY.md requirements-completed key corrected; ScatterAnimation removed from provides list; 06-03-SUMMARY.md draw_axes() accuracy verified.
 
 ## Current Position
 
-Phase: 9 of 9 (v1.1 Integration Test Coverage) — COMPLETE
-Plan: 1/1 complete (09-01: surface_rendering integration tests)
-Status: 09-01 complete — Four integration tests in tests/surface_rendering.rs; SURF-01, SURF-02, SURF-04 satisfied; full suite passing
-Last activity: 2026-02-26 — 09-01 complete — render_static() + wireframe + shaded_wireframe + axis primitive tests
+Phase: 09.1 (v1.1 Summary Schema and Doc Fixes) — COMPLETE
+Plan: 1/1 complete (09.1-01: fix 08-01-SUMMARY.md schema and 06-03-SUMMARY.md accuracy)
+Status: 09.1-01 complete — requirements-completed key fixed, ScatterAnimation removed from provides, 06-03-SUMMARY.md verified accurate
+Last activity: 2026-02-26 — 09.1-01 complete — gsd-tools summary-extract now returns SCAT-01 and SCAT-02 correctly
 
 Progress: [██████████] 100%
 
@@ -59,6 +59,7 @@ Progress: [██████████] 100%
 | Phase 08 P01 | 2 | 2 tasks | 3 files |
 | Phase 08 P02 | 3 | 2 tasks | 4 files |
 | Phase 09 P01 | 1 | 1 task | 1 file |
+| Phase 09.1 P01 | 2 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -136,6 +137,7 @@ Decisions from 06-03 execution:
 - [06-03]: far_floor_corner uses integer cast (az as u32) for 4-quadrant match — avoids floating-point edge cases at boundaries; 360.0 normalizes to 0 via modulo
 - [06-03]: tick_precision guard: step <= 0.0 returns 0 — prevents log10(0) = -inf panic when surface z range is degenerate (all values equal)
 - [06-03]: Stale tests updated: to_primitives now always includes axis primitives (Line + Text) — tests assert Bezier count (face count) instead of total count
+- [Phase 09.1-01]: requirements-completed YAML key uses hyphens (not underscores) — gsd-tools summary-extract reads fm['requirements-completed'] per commands.cjs:307
 
 ### Pending Todos
 
@@ -149,5 +151,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 09-01-PLAN.md — Four integration tests in tests/surface_rendering.rs closing SURF-01, SURF-02, SURF-04 audit gaps. static_surface_renders_to_mp4, wireframe_surface_renders_to_mp4, shaded_wireframe_surface_renders_to_mp4, to_primitives_contains_face_and_axis_primitives all passing. Phase 9 complete.
+Stopped at: Completed 09.1-01-PLAN.md — Fixed 08-01-SUMMARY.md requirements-completed YAML key (was requirements_satisfied); removed ScatterAnimation from provides list; verified 06-03-SUMMARY.md draw_axes() already accurately described as private. Phase 09.1 complete.
 Resume file: None
