@@ -372,7 +372,7 @@ fn compute_range(values: &[f64], padding_frac: f64) -> (f64, f64) {
 
 /// Heckbert "nice numbers" tick generation (Graphics Gems, 1990).
 /// Returns 5–10 human-readable tick values at multiples of 1, 2, or 5 × 10^n.
-fn generate_ticks(data_min: f64, data_max: f64, target_count: usize) -> Vec<f64> {
+pub(crate) fn generate_ticks(data_min: f64, data_max: f64, target_count: usize) -> Vec<f64> {
     if data_min >= data_max {
         return vec![data_min, data_max];
     }
@@ -411,13 +411,13 @@ fn nice_num(x: f64, round: bool) -> f64 {
 
 /// Compute decimal precision from the tick step size.
 /// step=1.0 → 0 decimals; step=0.1 → 1 decimal; step=0.01 → 2 decimals.
-fn tick_precision(step: f64) -> usize {
+pub(crate) fn tick_precision(step: f64) -> usize {
     if step >= 1.0 { 0 } else { (-step.log10().floor()) as usize }
 }
 
 /// Format a tick value with appropriate decimal precision to avoid floating-point noise.
 /// E.g., step=0.1 → "0.3" not "0.30000000000000004".
-fn format_tick(val: f64, step: f64) -> String {
+pub(crate) fn format_tick(val: f64, step: f64) -> String {
     let precision = tick_precision(step);
     format!("{:.precision$}", val, precision = precision)
 }
