@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 3D Surface Visualization
 status: unknown
-last_updated: "2026-02-26T02:01:34.233Z"
+last_updated: "2026-02-26T02:47:27.014Z"
 progress:
-  total_phases: 2
-  completed_phases: 2
-  total_plans: 6
-  completed_plans: 6
+  total_phases: 3
+  completed_phases: 3
+  total_plans: 8
+  completed_plans: 8
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 7 COMPLETE — Surface and Camera Animation (Plan 02 done: SceneBuilder::add_surface_at(), three integration tests proving morphing + orbiting → MP4); Phase 8 next (Scatter Points)
+**Current focus:** Phase 8 in progress — Scatter Points (Plan 01 done: ScatterPlot struct, depth-sorted circles, fade animation; Plan 02 next: SceneBuilder wiring)
 
 ## Current Position
 
-Phase: 7 of 8 (Surface and Camera Animation) — COMPLETE
-Plan: 2/2 complete (07-02: SceneBuilder::add_surface_at() + three integration tests → MP4)
-Status: Phase 7 complete — ANIM-01, ANIM-02 fully satisfied; 115 lib tests + 3 integration tests passing
-Last activity: 2026-02-26 — 07-02 complete — add_surface_at() wired, morphing+orbiting integration tests pass
+Phase: 8 of 8 (Scatter Points) — IN PROGRESS
+Plan: 1/2 complete (08-01: ScatterPlot struct + depth-sorted circle rendering)
+Status: 08-01 complete — SCAT-01, SCAT-02 core logic implemented; 119 lib tests passing
+Last activity: 2026-02-26 — 08-01 complete — ScatterPlot::to_depth_sorted_circles, to_depth_sorted_circles_at, fade animation
 
-Progress: [████████░░] ~80%
+Progress: [█████████░] ~90%
 
 ## Performance Metrics
 
@@ -56,6 +56,7 @@ Progress: [████████░░] ~80%
 | Phase 06 P03 | 3 | 2 tasks | 2 files |
 | Phase 07 P01 | 3 | 2 tasks | 1 file |
 | Phase 07 P02 | 2 | 2 tasks | 2 files |
+| Phase 08 P01 | 2 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,13 @@ Decisions from 07-01 execution:
 - [07-01]: camera_at() returns None with no animations — caller uses static camera for no-animation case
 - [07-01]: FitAnimation and CameraAnimation are private structs — internal animation range records only
 
+Decisions from 08-01 execution:
+
+- [08-01]: ScatterPlot uses exponential depth falloff (-3t exponent) — visually smoother than linear falloff
+- [08-01]: render_circles() private helper shared by both public methods — avoids code duplication
+- [08-01]: BEHIND_SURFACE_DIM=0.17, ALPHA_FLOOR=0.03 — locked range constants from CONTEXT.md
+- [08-01]: ScatterPlot exported from dataviz/mod.rs alphabetically consistent with existing pattern
+
 Decisions from 06-03 execution:
 
 - [06-03]: far_floor_corner uses integer cast (az as u32) for 4-quadrant match — avoids floating-point edge cases at boundaries; 360.0 normalizes to 0 via modulo
@@ -125,5 +133,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 07-02-PLAN.md — SceneBuilder::add_surface_at() added; three integration tests (surface_animation_renders_to_mp4, surface_morph_only_renders_to_mp4, camera_orbit_only_renders_to_mp4) pass. Phase 7 complete. ANIM-01 and ANIM-02 fully satisfied.
+Stopped at: Completed 08-01-PLAN.md — ScatterPlot struct created; to_depth_sorted_circles, to_depth_sorted_circles_at implemented with exponential depth falloff, behind-surface dimming, and fade animation. 4 scatter tests + 115 prior = 119 total passing. SCAT-01 and SCAT-02 core logic done.
 Resume file: None

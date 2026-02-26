@@ -109,4 +109,4 @@ Plans:
 | 5. Camera and Projection Foundation | v1.1 | 3/3 | Complete | 2026-02-25 |
 | 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
 | 7. Surface and Camera Animation | 2/2 | Complete   | 2026-02-26 | 2026-02-26 |
-| 8. Scatter Points | v1.1 | 0/2 | Not started | - |
+| 8. Scatter Points | 1/2 | In Progress|  | - |
