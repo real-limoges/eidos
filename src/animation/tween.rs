@@ -88,31 +88,16 @@ mod tests {
     use super::*;
     use crate::animation::Easing;
     use crate::primitives::circle::CircleState;
+    use crate::Color;
 
     fn make_tween(easing: Easing) -> Tween<CircleState> {
-        Tween {
-            start: CircleState {
-                cx: 100.0,
-                cy: 300.0,
-                r: 80.0,
-                fill_r: 255.0,
-                fill_g: 0.0,
-                fill_b: 0.0,
-                opacity: 1.0,
-            },
-            end: CircleState {
-                cx: 600.0,
-                cy: 300.0,
-                r: 80.0,
-                fill_r: 255.0,
-                fill_g: 0.0,
-                fill_b: 255.0,
-                opacity: 1.0,
-            },
-            start_time: 0.0,
-            duration: 3.0,
-            easing,
-        }
+        Tween::build(
+            CircleState::new(100.0, 300.0, 80.0, Color::RED, 1.0),
+            CircleState::new(600.0, 300.0, 80.0, Color::MAGENTA, 1.0),
+        )
+        .over(3.0)
+        .easing(easing)
+        .build()
     }
 
     #[test]
