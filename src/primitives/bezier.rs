@@ -1,5 +1,5 @@
 // src/primitives/bezier.rs
-use crate::{Color, EidosError};
+use crate::Color;
 
 /// An individual path drawing command.
 pub enum PathCommand {
@@ -13,7 +13,7 @@ pub enum PathCommand {
 /// A general bezier path primitive.
 ///
 /// Supports move_to, line_to, cubic_to (cubic bezier), and close commands.
-/// All path-building methods return Self (infallible). Only stroke() validates its input.
+/// All path-building methods return Self (infallible). stroke() and opacity() clamp invalid inputs.
 ///
 /// Named `Bezier` to match the existing Primitive enum variant and module export.
 #[derive(Debug, Clone)]
@@ -89,15 +89,10 @@ impl Bezier {
         self
     }
 
-    /// Set stroke color and width. Returns Err if width is negative.
-    pub fn stroke(mut self, color: Color, width: f64) -> Result<Self, EidosError> {
-        if width < 0.0 {
-            return Err(EidosError::InvalidConfig(
-                "stroke width must be non-negative".into(),
-            ));
-        }
-        self.stroke = Some((color, width));
-        Ok(self)
+    /// Set stroke color and width. Negative widths are clamped to 0.0.
+    pub fn stroke(mut self, color: Color, width: f64) -> Self {
+        self.stroke = Some((color, width.max(0.0)));
+        self
     }
 
     /// Set fill color. Returns Self for chaining (no validation needed).
@@ -106,15 +101,10 @@ impl Bezier {
         self
     }
 
-    /// Set opacity in [0.0, 1.0]. Returns Err if outside range.
-    pub fn opacity(mut self, value: f64) -> Result<Self, EidosError> {
-        if !(0.0..=1.0).contains(&value) {
-            return Err(EidosError::InvalidConfig(
-                "opacity must be in range [0.0, 1.0]".into(),
-            ));
-        }
-        self.opacity = value;
-        Ok(self)
+    /// Set opacity in [0.0, 1.0]. Values outside [0.0, 1.0] are clamped.
+    pub fn opacity(mut self, value: f64) -> Self {
+        self.opacity = value.clamp(0.0, 1.0);
+        self
     }
 
     /// Convert to an svg::node::element::Path node for inclusion in an SVG document.
@@ -165,15 +155,15 @@ mod tests {
     use crate::Color;
 
     #[test]
-    fn bezier_negative_stroke_returns_err() {
+    fn bezier_negative_stroke_is_clamped() {
         let result = Bezier::new().stroke(Color::WHITE, -1.0);
-        assert!(result.is_err());
+        assert_eq!(result.stroke, Some((Color::WHITE, 0.0)));
     }
 
     #[test]
-    fn bezier_opacity_out_of_range_returns_err() {
+    fn bezier_opacity_clamped() {
         let result = Bezier::new().opacity(2.0);
-        assert!(result.is_err());
+        assert_eq!(result.opacity, 1.0);
     }
 
     #[test]
@@ -193,9 +183,7 @@ mod tests {
             .line_to(100.0, 0.0)
             .fill(Color::BLUE)
             .stroke(Color::WHITE, 2.0)
-            .unwrap()
-            .opacity(0.75)
-            .unwrap();
+            .opacity(0.75);
         assert!(path.fill.is_some());
         assert!(path.stroke.is_some());
         assert_eq!(path.opacity, 0.75);

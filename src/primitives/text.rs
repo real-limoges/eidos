@@ -1,5 +1,5 @@
 // src/primitives/text.rs
-use crate::{Color, EidosError};
+use crate::Color;
 use keyframe_derive::CanTween;
 
 /// Text horizontal alignment.
@@ -61,37 +61,22 @@ impl Text {
         self
     }
 
-    /// Set stroke color and width. Returns Err if width is negative.
-    pub fn stroke(mut self, color: Color, width: f64) -> Result<Self, EidosError> {
-        if width < 0.0 {
-            return Err(EidosError::InvalidConfig(
-                "stroke width must be non-negative".into(),
-            ));
-        }
-        self.stroke = Some((color, width));
-        Ok(self)
+    /// Set stroke color and width. Negative widths are clamped to 0.0.
+    pub fn stroke(mut self, color: Color, width: f64) -> Self {
+        self.stroke = Some((color, width.max(0.0)));
+        self
     }
 
-    /// Set opacity in [0.0, 1.0]. Returns Err if outside range.
-    pub fn opacity(mut self, value: f64) -> Result<Self, EidosError> {
-        if !(0.0..=1.0).contains(&value) {
-            return Err(EidosError::InvalidConfig(
-                "opacity must be in range [0.0, 1.0]".into(),
-            ));
-        }
-        self.opacity = value;
-        Ok(self)
+    /// Set opacity in [0.0, 1.0]. Values outside [0.0, 1.0] are clamped.
+    pub fn opacity(mut self, value: f64) -> Self {
+        self.opacity = value.clamp(0.0, 1.0);
+        self
     }
 
-    /// Set font size in pixels. Returns Err if size is not positive.
-    pub fn font_size(mut self, size: f64) -> Result<Self, EidosError> {
-        if size <= 0.0 {
-            return Err(EidosError::InvalidConfig(
-                "font size must be positive".into(),
-            ));
-        }
-        self.font_size = size;
-        Ok(self)
+    /// Set font size in pixels. Values <= 0.0 are clamped to 1.0.
+    pub fn font_size(mut self, size: f64) -> Self {
+        self.font_size = size.max(1.0);
+        self
     }
 
     /// Set horizontal text alignment. Returns Self for chaining (no validation needed).
@@ -100,15 +85,10 @@ impl Text {
         self
     }
 
-    /// Set line height multiplier in em units. Returns Err if not positive.
-    pub fn line_height(mut self, lh: f64) -> Result<Self, EidosError> {
-        if lh <= 0.0 {
-            return Err(EidosError::InvalidConfig(
-                "line height must be positive".into(),
-            ));
-        }
-        self.line_height = lh;
-        Ok(self)
+    /// Set line height multiplier in em units. Values <= 0.0 are clamped to 0.1.
+    pub fn line_height(mut self, lh: f64) -> Self {
+        self.line_height = lh.max(0.1);
+        self
     }
 
     /// Convert to an svg::node::element::Text node with multi-line tspan support.
@@ -184,9 +164,7 @@ impl TextState {
         crate::primitives::Text::new(self.x, self.y, content)
             .fill(crate::Color::rgb(r, g, b))
             .font_size(self.font_size.max(1.0))
-            .unwrap() // safe: font_size clamped to at least 1.0 (positive)
             .opacity(self.opacity.clamp(0.0, 1.0))
-            .unwrap() // safe: opacity clamped to valid range
     }
 }
 
@@ -196,21 +174,21 @@ mod tests {
     use crate::Color;
 
     #[test]
-    fn text_negative_stroke_returns_err() {
+    fn text_negative_stroke_is_clamped() {
         let result = Text::new(10.0, 20.0, "hello").stroke(Color::WHITE, -1.0);
-        assert!(result.is_err());
+        assert_eq!(result.stroke, Some((Color::WHITE, 0.0)));
     }
 
     #[test]
-    fn text_zero_font_size_returns_err() {
+    fn text_zero_font_size_is_clamped() {
         let result = Text::new(10.0, 20.0, "hello").font_size(0.0);
-        assert!(result.is_err());
+        assert_eq!(result.font_size, 1.0);
     }
 
     #[test]
-    fn text_zero_line_height_returns_err() {
+    fn text_zero_line_height_is_clamped() {
         let result = Text::new(10.0, 20.0, "hello").line_height(0.0);
-        assert!(result.is_err());
+        assert_eq!(result.line_height, 0.1);
     }
 
     #[test]
@@ -218,12 +196,9 @@ mod tests {
         let t = Text::new(50.0, 100.0, "Hello\nWorld")
             .fill(Color::YELLOW)
             .font_size(24.0)
-            .unwrap()
             .alignment(Alignment::Center)
             .line_height(1.5)
-            .unwrap()
-            .opacity(0.9)
-            .unwrap();
+            .opacity(0.9);
         assert_eq!(t.font_size, 24.0);
         assert_eq!(t.alignment, Alignment::Center);
         assert_eq!(t.line_height, 1.5);
