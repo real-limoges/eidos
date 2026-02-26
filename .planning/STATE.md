@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 8 COMPLETE — Scatter Points fully implemented and wired. SCAT-01, SCAT-02 satisfied. Full suite passing.
+**Current focus:** Phase 9 COMPLETE — v1.1 integration test coverage. SURF-01, SURF-02, SURF-04 audit gaps closed. Full suite passing.
 
 ## Current Position
 
-Phase: 8 of 8 (Scatter Points) — COMPLETE
-Plan: 2/2 complete (08-02: SceneBuilder wiring + integration tests)
-Status: 08-02 complete — ScatterPlot wired into SceneBuilder; SCAT-01 + SCAT-02 satisfied; 119 lib tests + 2 scatter integration tests passing
-Last activity: 2026-02-26 — 08-02 complete — add_scatter/add_scatter_at with depth-merge painter's algorithm
+Phase: 9 of 9 (v1.1 Integration Test Coverage) — COMPLETE
+Plan: 1/1 complete (09-01: surface_rendering integration tests)
+Status: 09-01 complete — Four integration tests in tests/surface_rendering.rs; SURF-01, SURF-02, SURF-04 satisfied; full suite passing
+Last activity: 2026-02-26 — 09-01 complete — render_static() + wireframe + shaded_wireframe + axis primitive tests
 
 Progress: [██████████] 100%
 
@@ -58,6 +58,7 @@ Progress: [██████████] 100%
 | Phase 07 P02 | 2 | 2 tasks | 2 files |
 | Phase 08 P01 | 2 | 2 tasks | 3 files |
 | Phase 08 P02 | 3 | 2 tasks | 4 files |
+| Phase 09 P01 | 1 | 1 task | 1 file |
 
 ## Accumulated Context
 
@@ -124,6 +125,12 @@ Decisions from 08-01 execution:
 - [08-01]: BEHIND_SURFACE_DIM=0.17, ALPHA_FLOOR=0.03 — locked range constants from CONTEXT.md
 - [08-01]: ScatterPlot exported from dataviz/mod.rs alphabetically consistent with existing pattern
 
+Decisions from 09-01 execution:
+
+- [09-01]: to_primitives_contains_face_and_axis_primitives has no ffmpeg guard — pure computation test; adds external-consumer coverage distinct from internal unit test
+- [09-01]: Distinct temp filenames per test (surface_static_test.mp4, surface_wireframe_test.mp4, surface_shaded_wireframe_test.mp4) — prevents parallel test collision
+- [09-01]: make_paraboloid(4) for primitives test, make_paraboloid(8) for render tests — smaller grid sufficient for assertion, reduces execution time
+
 Decisions from 06-03 execution:
 
 - [06-03]: far_floor_corner uses integer cast (az as u32) for 4-quadrant match — avoids floating-point edge cases at boundaries; 360.0 normalizes to 0 via modulo
@@ -142,5 +149,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 08-02-PLAN.md — ScatterPlot wired into SceneBuilder with depth-merge painter's algorithm. add_scatter/add_scatter_at + prim_depths/face_depths fields added. Two integration tests pass: SCAT-01 (static scatter MP4) and SCAT-02 (animated scatter MP4). Phase 8 complete.
+Stopped at: Completed 09-01-PLAN.md — Four integration tests in tests/surface_rendering.rs closing SURF-01, SURF-02, SURF-04 audit gaps. static_surface_renders_to_mp4, wireframe_surface_renders_to_mp4, shaded_wireframe_surface_renders_to_mp4, to_primitives_contains_face_and_axis_primitives all passing. Phase 9 complete.
 Resume file: None

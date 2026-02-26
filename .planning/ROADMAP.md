@@ -31,7 +31,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 6: Static 3D Surface Rendering** - Wireframe mesh, shaded surface with z-height colormap, and 3D cartesian axes (completed 2026-02-26)
 - [x] **Phase 7: Surface and Camera Animation** - Surface morphing from flat to fitted shape, and camera orbit animation (completed 2026-02-26)
 - [x] **Phase 8: Scatter Points** - 3D scatter point rendering with depth-based opacity and fade-in animation (completed 2026-02-26)
-- [ ] **Phase 9: v1.1 Integration Test Coverage** - Close E2E test gaps identified in audit: render_static() surface flow, Wireframe/ShadedWireframe render modes, axis primitive assertion
+- [x] **Phase 9: v1.1 Integration Test Coverage** - Close E2E test gaps identified in audit: render_static() surface flow, Wireframe/ShadedWireframe render modes, axis primitive assertion (completed 2026-02-26)
 - [ ] **Phase 9.1: v1.1 SUMMARY Schema and Doc Fixes** - Fix SUMMARY frontmatter key mismatch (requirements_satisfied → requirements_completed) and doc inaccuracies for draw_axes() and ScatterAnimation visibility
 
 ## Phase Details
@@ -109,7 +109,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 09-01-PLAN.md — Integration tests for render_static(), Wireframe, ShadedWireframe, and axis primitive presence
+- [x] 09-01-PLAN.md — Integration tests for render_static(), Wireframe, ShadedWireframe, and axis primitive presence
 
 ### Phase 9.1: v1.1 SUMMARY Schema and Doc Fixes
 **Goal**: Fix SUMMARY frontmatter key mismatch and documentation inaccuracies flagged in the v1.1 audit so future audits produce clean 3-source cross-reference results
@@ -142,5 +142,5 @@ Plans:
 | 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
 | 7. Surface and Camera Animation | 2/2 | Complete   | 2026-02-26 | 2026-02-26 |
 | 8. Scatter Points | v1.1 | 2/2 | Complete | 2026-02-26 |
-| 9. v1.1 Integration Test Coverage | v1.1 | 0/1 | Pending | - |
+| 9. v1.1 Integration Test Coverage | v1.1 | 1/1 | Complete | 2026-02-26 |
 | 9.1. v1.1 SUMMARY Schema and Doc Fixes | v1.1 | 0/1 | Pending | - |

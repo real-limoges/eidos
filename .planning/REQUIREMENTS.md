@@ -16,8 +16,8 @@ Requirements for the 3D Surface Visualization milestone. Each maps to roadmap ph
 
 ### Scatter
 
-- [ ] **SCAT-01**: User can add (x, y, z) scatter points to a 3D plot, rendered with depth-based opacity
-- [ ] **SCAT-02**: User can animate scatter points fading in over a specified time range
+- [x] **SCAT-01**: User can add (x, y, z) scatter points to a 3D plot, rendered with depth-based opacity
+- [x] **SCAT-02**: User can animate scatter points fading in over a specified time range
 
 ### Animation
 
@@ -54,12 +54,12 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SURF-01 | Phase 5 | Complete (05-01) |
-| SURF-02 | Phase 6 | Complete |
+| SURF-01 | Phase 5 + Phase 9 integration tests | Complete (05-01, 09-01) |
+| SURF-02 | Phase 6 + Phase 9 integration tests | Complete (06-01, 09-01) |
 | SURF-03 | Phase 6 | Complete |
-| SURF-04 | Phase 6 | Complete |
-| SCAT-01 | Phase 8 | Pending |
-| SCAT-02 | Phase 8 | Pending |
+| SURF-04 | Phase 6 + Phase 9 integration tests | Complete (06-03, 09-01) |
+| SCAT-01 | Phase 8 | Complete |
+| SCAT-02 | Phase 8 | Complete |
 | ANIM-01 | Phase 7 | Complete |
 | ANIM-02 | Phase 7 | Complete |
 
@@ -70,4 +70,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-25*
-*Last updated: 2026-02-25 — traceability populated after roadmap creation*
+*Last updated: 2026-02-26 — Phase 9 integration test coverage added to SURF-01, SURF-02, SURF-04 traceability*
