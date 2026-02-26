@@ -42,7 +42,7 @@ Full phase details: `.planning/milestones/v1.1-ROADMAP.md`
 
 **Milestone Goal:** Eliminate the most common friction points in the eidos API — verbose animation state construction, manual coordinate math, and unpredictable `?` in builder chains.
 
-- [ ] **Phase 10: Infallible Builders** — All primitive builder methods return `Self` with clamped values; no `?` required
+- [x] **Phase 10: Infallible Builders** — All primitive builder methods return `Self` with clamped values; no `?` required (completed 2026-02-26)
 - [ ] **Phase 11: State and Tween Ergonomics** — State types accept `Color` directly; `Tween` fluent builder API
 - [ ] **Phase 12: Coordinate Mapping** — `Axes::map_point()` data-to-pixel coordinate helper
 
@@ -102,6 +102,6 @@ Plans:
 | 8. Scatter Points | v1.1 | 2/2 | Complete | 2026-02-26 |
 | 9. v1.1 Integration Test Coverage | v1.1 | 1/1 | Complete | 2026-02-26 |
 | 9.1. v1.1 SUMMARY Schema and Doc Fixes | v1.1 | 1/1 | Complete | 2026-02-26 |
-| 10. Infallible Builders | 1/2 | In Progress|  | - |
+| 10. Infallible Builders | 2/2 | Complete   | 2026-02-26 | - |
 | 11. State and Tween Ergonomics | v1.2 | 0/? | Not started | - |
 | 12. Coordinate Mapping | v1.2 | 0/? | Not started | - |

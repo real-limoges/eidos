@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.2
 milestone_name: API Polish & Ergonomics
 status: in_progress
-last_updated: "2026-02-26T00:34:00.000Z"
+last_updated: "2026-02-26T00:42:30.000Z"
 progress:
   total_phases: 3
   completed_phases: 0
-  total_plans: 1
-  completed_plans: 1
+  total_plans: 2
+  completed_plans: 2
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 10 — Infallible Builders (v1.2, plan 02 next)
+**Current focus:** Phase 10 — Infallible Builders (v1.2, plan 02 complete)
 
 ## Current Position
 
 Phase: 10 of 12 (Infallible Builders)
-Plan: 01 complete — 02 next
+Plan: 02 complete — phase complete
 Status: In progress
-Last activity: 2026-02-26 — Phase 10 Plan 01 complete: all six primitive builders now infallible
+Last activity: 2026-02-26 — Phase 10 Plan 02 complete: all dataviz callers updated, cargo test passes
 
-Progress: [█░░░░░░░░░] 10% (v1.2)
+Progress: [██░░░░░░░░] 20% (v1.2)
 
 ## Performance Metrics
 
@@ -50,6 +50,7 @@ Relevant decisions for v1.2 work:
 - [v1.0]: State structs use f64 channels (0..=255) — no overflow during interpolation; cast to u8 only at to_*()
 - [v1.0]: EidosError with two variants (InvalidConfig, RenderFailed) — builder methods previously returned Result<Self>; now infallible with clamping (Phase 10)
 - [Phase 10-01]: Infallible builder strategy — clamp invalid inputs to valid range instead of returning Err. opacity→[0,1], stroke_width→max(0), font_size→max(1.0), line_height→max(0.1)
+- [Phase 10-02]: DataCurve, ConfidenceBand, SplineFit dataviz builders also converted to infallible — EidosError retained only in ::new() for point-count validation
 - [v1.0]: All user-facing types re-exported at crate root
 - [Phase 09.1-01]: requirements-completed YAML key uses hyphens (not underscores) — gsd-tools reads fm['requirements-completed']
 
@@ -64,5 +65,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Phase 10 Plan 01 complete — infallible primitive builders done; plan 02 (fix dataviz callers) is next.
+Stopped at: Phase 10 Plan 02 complete — infallible builder refactor done across entire codebase; API-01 requirement fulfilled.
 Resume file: None
