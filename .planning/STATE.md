@@ -3,12 +3,12 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 3D Surface Visualization
 status: unknown
-last_updated: "2026-02-26T01:44:57.853Z"
+last_updated: "2026-02-26T01:51:11.481Z"
 progress:
   total_phases: 2
   completed_phases: 1
   total_plans: 6
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -18,14 +18,14 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 6 — Static 3D Surface Rendering (Plan 01 complete — colormap, Camera::eye_position, RenderMode, data extents)
+**Current focus:** Phase 6 — Static 3D Surface Rendering (Plan 02 complete — to_primitives(), SceneBuilder::add_surface(), eidos::RenderMode re-export)
 
 ## Current Position
 
 Phase: 6 of 8 (Static 3D Surface Rendering)
-Plan: 1 complete (colormap.rs, eye_position, RenderMode enum, SurfacePlot builder methods)
+Plan: 2 complete (to_primitives() painter's algorithm, SceneBuilder::add_surface(), RenderMode crate root re-export)
 Status: In progress
-Last activity: 2026-02-26 — 06-01 complete — viridis colormap, Camera::eye_position(), RenderMode, data extents, 111 tests passing
+Last activity: 2026-02-26 — 06-02 complete — painter's algorithm rendering loop, 117 tests passing
 
 Progress: [████░░░░░░] ~40%
 
@@ -52,6 +52,7 @@ Progress: [████░░░░░░] ~40%
 
 *Updated after each plan completion*
 | Phase 06 P01 | 14 | 2 tasks | 4 files |
+| Phase 06 P02 | 4 | 2 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -87,6 +88,8 @@ Decisions from 05-03 execution:
 - [Phase 06-01]: Viridis LUT test: b>100 incompatible with canonical data (b=84); changed to b>g && b>50
 - [Phase 06-01]: data_extents captured before normalize_to_world_space — only correct placement for axis tick labels
 - [Phase 06-01]: eye_position() recomputes from spherical params at call time — consistent with Camera::new formula
+- [Phase 06]: Test data for to_primitives must use flat surface (all z=0) for predictable face normals — slanted surfaces have normals sensitive to camera angle
+- [Phase 06]: Painter's algorithm: precompute projected corner grid, backface cull via cross-product normal + dot product, sort back-to-front by squared centroid distance
 
 ### Pending Todos
 
@@ -94,11 +97,11 @@ None yet.
 
 ### Blockers/Concerns
 
-- [Phase 6]: SVG per-frame performance at 30x30 mesh is unvalidated — benchmark must pass before feature work continues; mitigation path (single `<path>` element) defined but requires refactor
-- [Phase 6]: 3D axis bounding-box edge selection sub-problem has sparse SVG-specific documentation — research spike recommended
+- [Phase 6]: 3D axis bounding-box edge selection sub-problem has sparse SVG-specific documentation — research spike recommended before Plan 06-03
+- [Phase 6]: 30x30 performance benchmark RESOLVED — to_primitives() runs sub-millisecond (well under 500ms limit); no mitigation needed
 
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 06-01-PLAN.md — colormap.rs, Camera::eye_position(), RenderMode, SurfacePlot data extents + builders, 111 tests passing.
+Stopped at: Completed 06-02-PLAN.md — to_primitives() painter's algorithm, SceneBuilder::add_surface(), eidos::RenderMode re-export, 117 tests passing.
 Resume file: None
