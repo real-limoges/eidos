@@ -19,6 +19,59 @@ use crate::dataviz::colormap::viridis_color;
 use crate::dataviz::axes::{generate_ticks, format_tick};
 use crate::primitives::{Primitive, Bezier, Line, Text};
 use crate::Color;
+use crate::animation::{Easing, Tween};
+
+/// Internal record for one animate_fit time range.
+struct FitAnimation {
+    start_time: f64,
+    duration:   f64,
+    easing:     Easing,
+}
+
+impl std::fmt::Debug for FitAnimation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("FitAnimation")
+            .field("start_time", &self.start_time)
+            .field("duration", &self.duration)
+            .finish()
+    }
+}
+
+impl Clone for FitAnimation {
+    fn clone(&self) -> Self {
+        FitAnimation { start_time: self.start_time, duration: self.duration, easing: self.easing }
+    }
+}
+
+/// Internal record for one animate_camera_azimuth time range.
+struct CameraAnimation {
+    start_time:  f64,
+    duration:    f64,
+    start_angle: f64,
+    end_angle:   f64,
+    easing:      Easing,
+}
+
+impl std::fmt::Debug for CameraAnimation {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("CameraAnimation")
+            .field("start_time", &self.start_time)
+            .field("duration", &self.duration)
+            .field("start_angle", &self.start_angle)
+            .field("end_angle", &self.end_angle)
+            .finish()
+    }
+}
+
+impl Clone for CameraAnimation {
+    fn clone(&self) -> Self {
+        CameraAnimation {
+            start_time: self.start_time, duration: self.duration,
+            start_angle: self.start_angle, end_angle: self.end_angle,
+            easing: self.easing,
+        }
+    }
+}
 
 /// Controls how the surface is rendered: wireframe edges only, solid shaded faces,
 /// or shaded faces with wireframe overlay.
@@ -75,6 +128,14 @@ pub struct SurfacePlot {
     y_label: String,
     z_label: String,
     show_base_grid: bool,
+    /// Normalized world-z per vertex extracted at construction. Same length as world_vertices.
+    /// Used by to_primitives_at() to interpolate z from 0.0 → fitted_z during surface morph.
+    fitted_zs: Vec<f64>,
+    /// Animation ranges registered via animate_fit(). Evaluated at render time in z_at().
+    /// Contract: user must not register overlapping ranges (behavior undefined for overlaps).
+    fit_animations: Vec<FitAnimation>,
+    /// Camera azimuth animation ranges registered via animate_camera_azimuth().
+    camera_animations: Vec<CameraAnimation>,
 }
 
 impl SurfacePlot {
@@ -108,6 +169,7 @@ impl SurfacePlot {
         let (y_data_min, y_data_max) = min_max(&ys);
         let (z_data_min, z_data_max) = min_max(&zs);
         let world_vertices = normalize_to_world_space(&xs, &ys, &zs);
+        let fitted_zs: Vec<f64> = world_vertices.iter().map(|p| p.z).collect();
         SurfacePlot {
             rows,
             cols,
@@ -123,6 +185,9 @@ impl SurfacePlot {
             y_label: "Y".to_string(),
             z_label: "Z".to_string(),
             show_base_grid: false,
+            fitted_zs,
+            fit_animations: Vec::new(),
+            camera_animations: Vec::new(),
         }
     }
 
@@ -172,6 +237,143 @@ impl SurfacePlot {
     pub fn show_base_grid(mut self, show: bool) -> Self {
         self.show_base_grid = show;
         self
+    }
+
+    /// Register a surface morph animation: vertices interpolate from z=0 (flat) to their
+    /// fitted world-z values over [start_time, start_time + duration].
+    ///
+    /// Hold semantics: before the first range → z=0; after last range → fitted_z;
+    /// between non-overlapping ranges → hold at fitted_z (100% morph).
+    ///
+    /// Multiple non-overlapping calls are supported (e.g. two separate morph sequences).
+    /// If animate_fit is never called, to_primitives_at behaves identically to to_primitives.
+    pub fn animate_fit(mut self, start_time: f64, duration: f64, easing: Easing) -> Self {
+        self.fit_animations.push(FitAnimation { start_time, duration, easing });
+        self
+    }
+
+    /// Register a camera azimuth sweep animation.
+    ///
+    /// The camera azimuth interpolates from start_angle to end_angle (in degrees)
+    /// over [start_time, start_time + duration]. Any float values are accepted for
+    /// angles — Camera::new treats them modulo 360° via trig, so 350→370 sweeps
+    /// smoothly through 360° without a jump.
+    ///
+    /// Hold semantics: before animation starts → start_angle; after it ends → end_angle.
+    /// Returns None from camera_at() when no animation is registered.
+    pub fn animate_camera_azimuth(
+        mut self,
+        start_time: f64,
+        duration: f64,
+        start_angle: f64,
+        end_angle: f64,
+        easing: Easing,
+    ) -> Self {
+        self.camera_animations.push(CameraAnimation {
+            start_time, duration, start_angle, end_angle, easing,
+        });
+        self
+    }
+
+    /// Evaluate the animated world-z for a single vertex at scene time t_secs.
+    ///
+    /// If no animations registered: returns fitted_z unchanged (static surface).
+    /// Before first animation: returns 0.0 (flat).
+    /// After last animation: returns fitted_z (full morph, hold-last).
+    /// Inside an active animation range: interpolates via Tween<f64>.
+    /// Between two non-overlapping ranges: returns fitted_z (hold at full morph).
+    fn z_at(&self, fitted_z: f64, t_secs: f64) -> f64 {
+        if self.fit_animations.is_empty() {
+            return fitted_z;
+        }
+
+        // Sort is skipped at call time — push order is preserved (user adds ranges chronologically).
+        // For robustness, still handle any order by scanning all ranges.
+
+        let first = &self.fit_animations[0];
+        let last  = &self.fit_animations[self.fit_animations.len() - 1];
+
+        // Before all animations: hold flat (z=0)
+        if t_secs < first.start_time {
+            return 0.0;
+        }
+
+        // After all animations: hold final fitted value
+        if t_secs >= last.start_time + last.duration {
+            return fitted_z;
+        }
+
+        // Search for an active range or detect a gap between two ranges
+        for anim in &self.fit_animations {
+            let end = anim.start_time + anim.duration;
+            if t_secs >= anim.start_time && t_secs < end {
+                // Inside this range: interpolate from 0.0 to fitted_z
+                let tween = Tween {
+                    start: 0.0_f64,
+                    end:   fitted_z,
+                    start_time: anim.start_time,
+                    duration:   anim.duration,
+                    easing:     anim.easing,
+                };
+                return tween.value_at(t_secs);
+            }
+        }
+
+        // Gap between two non-overlapping ranges: hold at fitted_z (previous range ended at 100%)
+        fitted_z
+    }
+
+    /// Evaluate the animated camera azimuth at scene time t_secs.
+    ///
+    /// Returns None if no camera animation has been registered (caller uses a static camera).
+    ///
+    /// Hold semantics:
+    /// - Before first animation starts: returns start_angle of first animation
+    /// - After last animation ends: returns end_angle of last animation
+    /// - Inside an active range: interpolates via Tween<f64>
+    /// - Between two non-overlapping ranges: returns end_angle of the preceding range
+    ///
+    /// The returned azimuth should be passed to Camera::new(azimuth, elevation_deg, distance).
+    /// Camera::new accepts any float — trig handles modulo 360° naturally.
+    pub fn camera_at(&self, t_secs: f64) -> Option<f64> {
+        if self.camera_animations.is_empty() {
+            return None;
+        }
+
+        let first = &self.camera_animations[0];
+        let last  = &self.camera_animations[self.camera_animations.len() - 1];
+
+        // Hold-first: before all animations
+        if t_secs < first.start_time {
+            return Some(first.start_angle);
+        }
+
+        // Hold-last: after all animations
+        if t_secs >= last.start_time + last.duration {
+            return Some(last.end_angle);
+        }
+
+        // Scan for active range or gap
+        let mut last_end_angle = first.start_angle;
+        for anim in &self.camera_animations {
+            let end = anim.start_time + anim.duration;
+            if t_secs >= anim.start_time && t_secs < end {
+                let tween = Tween {
+                    start: anim.start_angle,
+                    end:   anim.end_angle,
+                    start_time: anim.start_time,
+                    duration:   anim.duration,
+                    easing:     anim.easing,
+                };
+                return Some(tween.value_at(t_secs));
+            }
+            if t_secs >= end {
+                last_end_angle = anim.end_angle;
+            }
+        }
+
+        // Gap between ranges: hold at end_angle of the most recently completed range
+        Some(last_end_angle)
     }
 
     /// Returns the data-space extents as (x_min, x_max, y_min, y_max, z_min, z_max).
@@ -356,6 +558,130 @@ impl SurfacePlot {
         let mut axis_prims = self.draw_axes(camera, viewport);
         prims.append(&mut axis_prims);
 
+        prims
+    }
+
+    /// Render this surface plot at scene time t_secs, applying surface morph animation.
+    ///
+    /// If animate_fit() was never called, this produces identical output to to_primitives().
+    /// Takes &self — safe to call from within a Fn (non-mutable) render closure.
+    pub fn to_primitives_at(&self, camera: &Camera, viewport: (u32, u32), t_secs: f64) -> Vec<Primitive> {
+        use crate::dataviz::camera::Vector3D;
+
+        // Build animated world vertices: same x,y as fitted, but z interpolated at t_secs
+        let animated: Vec<Point3D> = self.world_vertices
+            .iter()
+            .enumerate()
+            .map(|(i, p)| Point3D {
+                x: p.x,
+                y: p.y,
+                z: self.z_at(self.fitted_zs[i], t_secs),
+            })
+            .collect();
+
+        // Helper closure to look up animated vertex at (row, col)
+        let anim_point = |r: usize, c: usize| -> Point3D {
+            animated[r * self.cols + c]
+        };
+
+        // Precompute projected screen positions using animated vertices
+        let projected: Vec<Vec<Option<crate::dataviz::camera::Point2D>>> = (0..self.rows)
+            .map(|r| {
+                (0..self.cols)
+                    .map(|c| camera.project_to_screen(anim_point(r, c), viewport))
+                    .collect()
+            })
+            .collect();
+
+        let (eye_x, eye_y, eye_z) = camera.eye_position();
+
+        struct FaceEntry {
+            row: usize,
+            col: usize,
+            depth_sq: f64,
+            centroid_z_norm: f64,
+        }
+
+        let face_count = (self.rows - 1) * (self.cols - 1);
+        let mut faces: Vec<FaceEntry> = Vec::with_capacity(face_count);
+
+        for r in 0..(self.rows - 1) {
+            for c in 0..(self.cols - 1) {
+                let p00 = anim_point(r, c);
+                let p01 = anim_point(r, c + 1);
+                let p10 = anim_point(r + 1, c);
+                let p11 = anim_point(r + 1, c + 1);
+
+                let ex = p01.x - p00.x; let ey = p01.y - p00.y; let ez = p01.z - p00.z;
+                let fx = p10.x - p00.x; let fy = p10.y - p00.y; let fz = p10.z - p00.z;
+                let normal = Vector3D {
+                    x: ey * fz - ez * fy,
+                    y: ez * fx - ex * fz,
+                    z: ex * fy - ey * fx,
+                };
+
+                if !camera.is_face_visible(normal) { continue; }
+
+                let cx = (p00.x + p01.x + p10.x + p11.x) / 4.0;
+                let cy = (p00.y + p01.y + p10.y + p11.y) / 4.0;
+                let cz = (p00.z + p01.z + p10.z + p11.z) / 4.0;
+
+                let dx = cx - eye_x; let dy = cy - eye_y; let dz = cz - eye_z;
+                let depth_sq = dx*dx + dy*dy + dz*dz;
+
+                faces.push(FaceEntry { row: r, col: c, depth_sq, centroid_z_norm: cz });
+            }
+        }
+
+        faces.sort_unstable_by(|a, b| b.depth_sq.total_cmp(&a.depth_sq));
+
+        let charcoal = Color::rgb(64, 64, 64);
+        const WIRE_STROKE_WIDTH: f64 = 1.0;
+        const SHADED_WIRE_STROKE_WIDTH: f64 = 0.5;
+
+        let mut prims: Vec<Primitive> = Vec::with_capacity(faces.len());
+
+        for face in &faces {
+            let r = face.row; let c = face.col;
+            let s00 = match projected[r][c]     { Some(p) => p, None => continue };
+            let s01 = match projected[r][c + 1] { Some(p) => p, None => continue };
+            let s11 = match projected[r+1][c+1] { Some(p) => p, None => continue };
+            let s10 = match projected[r+1][c]   { Some(p) => p, None => continue };
+
+            match self.render_mode {
+                RenderMode::Shaded => {
+                    let t = (face.centroid_z_norm + 1.0) / 2.0;
+                    let face_color = viridis_color(t);
+                    let path = Bezier::new()
+                        .move_to(s00.x, s00.y).line_to(s01.x, s01.y)
+                        .line_to(s11.x, s11.y).line_to(s10.x, s10.y)
+                        .close().fill(face_color);
+                    prims.push(path.into());
+                }
+                RenderMode::Wireframe => {
+                    let path = Bezier::new()
+                        .move_to(s00.x, s00.y).line_to(s01.x, s01.y)
+                        .line_to(s11.x, s11.y).line_to(s10.x, s10.y)
+                        .close().stroke(charcoal, WIRE_STROKE_WIDTH)
+                        .expect("stroke width 1.0 is valid");
+                    prims.push(path.into());
+                }
+                RenderMode::ShadedWireframe => {
+                    let t = (face.centroid_z_norm + 1.0) / 2.0;
+                    let face_color = viridis_color(t);
+                    let path = Bezier::new()
+                        .move_to(s00.x, s00.y).line_to(s01.x, s01.y)
+                        .line_to(s11.x, s11.y).line_to(s10.x, s10.y)
+                        .close().fill(face_color)
+                        .stroke(charcoal, SHADED_WIRE_STROKE_WIDTH)
+                        .expect("stroke width 0.5 is valid");
+                    prims.push(path.into());
+                }
+            }
+        }
+
+        let mut axis_prims = self.draw_axes(camera, viewport);
+        prims.append(&mut axis_prims);
         prims
     }
 
@@ -929,5 +1255,136 @@ mod tests {
         assert_eq!(plot.x_label_value(), "X", "default x label should be X");
         assert_eq!(plot.y_label_value(), "Y", "default y label should be Y");
         assert_eq!(plot.z_label_value(), "Z", "default z label should be Z");
+    }
+
+    // --- animate_fit / z_at tests ---
+
+    #[test]
+    fn z_at_no_animations_returns_fitted_z() {
+        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
+        let plot2 = SurfacePlot::new(xs, ys, zs, 1, 2);
+        // fitted_zs[1] should be 1.0 (normalized max) — z_at returns it unchanged
+        assert!((plot2.z_at(1.0, 0.0) - 1.0).abs() < 1e-10,
+            "no animations: z_at should return fitted_z unchanged");
+    }
+
+    #[test]
+    fn z_at_before_animation_returns_zero() {
+        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
+        let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
+            .animate_fit(5.0, 3.0, Easing::Linear);
+        // t=0 is before the animation (starts at 5.0) → should return 0.0 (flat)
+        assert!((plot.z_at(1.0, 0.0) - 0.0).abs() < 1e-10,
+            "before animation: z_at should return 0.0 (flat)");
+    }
+
+    #[test]
+    fn z_at_after_animation_returns_fitted_z() {
+        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
+        let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
+            .animate_fit(0.0, 3.0, Easing::Linear);
+        // t=5.0 is after animation end (3.0) → hold-last at fitted_z
+        assert!((plot.z_at(1.0, 5.0) - 1.0).abs() < 1e-10,
+            "after animation: z_at should return fitted_z (1.0)");
+    }
+
+    #[test]
+    fn z_at_midpoint_linear_is_half_fitted_z() {
+        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
+        let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
+            .animate_fit(0.0, 4.0, Easing::Linear);
+        // At t=2.0 (50% through 4.0s linear): z = 0.5 * fitted_z = 0.5
+        let z = plot.z_at(1.0, 2.0);
+        assert!((z - 0.5).abs() < 1e-9, "linear midpoint should be 0.5; got {}", z);
+    }
+
+    #[test]
+    fn z_at_between_two_ranges_holds_at_fitted_z() {
+        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
+        let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
+            .animate_fit(0.0, 2.0, Easing::Linear)  // ends at t=2.0
+            .animate_fit(5.0, 2.0, Easing::Linear);  // starts at t=5.0
+        // At t=3.5 (between the two ranges): hold at fitted_z
+        let z = plot.z_at(1.0, 3.5);
+        assert!((z - 1.0).abs() < 1e-10, "between ranges: z should hold at fitted_z (1.0); got {}", z);
+    }
+
+    #[test]
+    fn to_primitives_at_t0_flat_surface_matches_all_z_zero() {
+        // Non-flat surface with animate_fit: at t=0 (before animation), all vertices should be at z=0
+        // A 2x2 grid with z in {0, 10} → fitted_zs in {-1, 1} after normalization
+        // At t=0 (before animation start at 5.0), z_at returns 0.0 for all vertices
+        let xs = vec![0.0, 1.0, 0.0, 1.0];
+        let ys = vec![0.0, 0.0, 1.0, 1.0];
+        let zs = vec![0.0, 10.0, 0.0, 10.0];
+        let plot = SurfacePlot::new(xs.clone(), ys.clone(), zs.clone(), 2, 2)
+            .animate_fit(5.0, 3.0, Easing::Linear);
+        let camera = Camera::new(45.0, 30.0, 3.0);
+        // to_primitives_at at t=0 should produce same output as a fully flat surface
+        let anim_result = plot.to_primitives_at(&camera, (800, 600), 0.0);
+        // Should have primitives (face + axes) — just verify it doesn't panic and produces output
+        assert!(!anim_result.is_empty(), "to_primitives_at at t=0 should produce primitives");
+    }
+
+    #[test]
+    fn to_primitives_at_no_animation_matches_to_primitives() {
+        // Without animate_fit, to_primitives_at at any t should match to_primitives
+        let plot = make_2x2_plot();
+        let camera = Camera::new(45.0, 30.0, 3.0);
+        let static_result = plot.to_primitives(&camera, (800, 600));
+        let at_result = plot.to_primitives_at(&camera, (800, 600), 42.0);
+        assert_eq!(static_result.len(), at_result.len(),
+            "to_primitives_at with no animation should produce same primitive count as to_primitives");
+    }
+
+    // --- animate_camera_azimuth / camera_at tests ---
+
+    #[test]
+    fn camera_at_no_animations_returns_none() {
+        let plot = make_2x2_plot();
+        assert!(plot.camera_at(0.0).is_none(), "no camera animations: camera_at should return None");
+    }
+
+    #[test]
+    fn camera_at_before_animation_holds_start_angle() {
+        let plot = make_2x2_plot()
+            .animate_camera_azimuth(5.0, 3.0, 45.0, 135.0, Easing::Linear);
+        let az = plot.camera_at(0.0).expect("should be Some");
+        assert!((az - 45.0).abs() < 1e-9, "before animation: should hold start_angle=45°; got {}", az);
+    }
+
+    #[test]
+    fn camera_at_after_animation_holds_end_angle() {
+        let plot = make_2x2_plot()
+            .animate_camera_azimuth(0.0, 3.0, 45.0, 135.0, Easing::Linear);
+        let az = plot.camera_at(10.0).expect("should be Some");
+        assert!((az - 135.0).abs() < 1e-9, "after animation: should hold end_angle=135°; got {}", az);
+    }
+
+    #[test]
+    fn camera_at_midpoint_linear_is_midpoint_angle() {
+        let plot = make_2x2_plot()
+            .animate_camera_azimuth(0.0, 4.0, 0.0, 180.0, Easing::Linear);
+        let az = plot.camera_at(2.0).expect("should be Some");
+        assert!((az - 90.0).abs() < 1e-9, "linear midpoint: azimuth should be 90°; got {}", az);
+    }
+
+    #[test]
+    fn camera_at_between_ranges_holds_end_angle_of_previous() {
+        let plot = make_2x2_plot()
+            .animate_camera_azimuth(0.0, 2.0, 0.0, 90.0, Easing::Linear)   // ends at t=2.0 → 90°
+            .animate_camera_azimuth(5.0, 2.0, 90.0, 180.0, Easing::Linear); // starts at t=5.0
+        // At t=3.5 (between ranges): hold at 90° (end of first range)
+        let az = plot.camera_at(3.5).expect("should be Some");
+        assert!((az - 90.0).abs() < 1e-9, "between ranges: azimuth should be 90°; got {}", az);
+    }
+
+    #[test]
+    fn camera_at_cross_360_sweep_works() {
+        // Sweep from 350° to 370° — should interpolate to 360° at midpoint, Camera::new handles trig
+        let plot = make_2x2_plot()
+            .animate_camera_azimuth(0.0, 2.0, 350.0, 370.0, Easing::Linear);
+        let az = plot.camera_at(1.0).expect("should be Some");
+        assert!((az - 360.0).abs() < 1e-9, "cross-360 midpoint: azimuth should be 360°; got {}", az);
     }
 }

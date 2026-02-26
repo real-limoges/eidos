@@ -74,7 +74,11 @@ Plans:
   1. User can call `animate_fit(start_time, duration, easing)` and the surface smoothly morphs from a flat plane to the final z-values over that time range
   2. User can animate the camera azimuth sweeping from a start angle to an end angle over a specified time range using any existing Easing variant
   3. An integration test renders a morphing surface with an orbiting camera to a valid MP4 without visual artifacts
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 07-01-PLAN.md — SurfacePlot animation infrastructure: fitted_zs, FitAnimation, animate_fit(), z_at(), to_primitives_at(), CameraAnimation, animate_camera_azimuth(), camera_at()
+- [ ] 07-02-PLAN.md — SceneBuilder::add_surface_at() wiring and integration test (morphing surface + orbiting camera → MP4)
 
 ### Phase 8: Scatter Points
 **Goal**: Users can overlay raw (x, y, z) data points on a 3D surface plot, with depth-based opacity and optional fade-in animation
@@ -100,5 +104,5 @@ Plans:
 | 4.6. v1.0 API Ergonomics Cleanup | v1.0 | 1/1 | Complete | 2026-02-25 |
 | 5. Camera and Projection Foundation | v1.1 | 3/3 | Complete | 2026-02-25 |
 | 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
-| 7. Surface and Camera Animation | v1.1 | 0/? | Not started | - |
+| 7. Surface and Camera Animation | v1.1 | 0/2 | Not started | - |
 | 8. Scatter Points | v1.1 | 0/? | Not started | - |
