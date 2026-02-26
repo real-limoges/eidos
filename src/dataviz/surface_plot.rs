@@ -938,7 +938,7 @@ fn min_max(vals: &[f64]) -> (f64, f64) {
 ///
 /// Degenerate range (hi ≈ lo): returns 0.0 (center of [-1, 1]).
 /// This handles flat surfaces where all z values are equal.
-fn normalize(v: f64, lo: f64, hi: f64) -> f64 {
+pub(crate) fn normalize(v: f64, lo: f64, hi: f64) -> f64 {
     let span = hi - lo;
     if span.abs() < 1e-12 {
         0.0

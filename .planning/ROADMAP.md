@@ -88,7 +88,11 @@ Plans:
   1. User can add scatter points from a `Vec<(f64, f64, f64)>` and they render as projected circles depth-sorted alongside mesh faces
   2. Scatter points closer to the viewer appear more opaque; points behind the surface are occluded correctly
   3. User can animate scatter points fading in over a specified time range, appearing after the surface is visible
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 08-01-PLAN.md — ScatterPlot struct: coordinate normalization, depth opacity, behind-surface dimming, fade animation (SCAT-01, SCAT-02)
+- [ ] 08-02-PLAN.md — SceneBuilder::add_scatter/add_scatter_at wiring, depth-merge with painter's algorithm, integration tests → MP4
 
 ## Progress
 
@@ -105,4 +109,4 @@ Plans:
 | 5. Camera and Projection Foundation | v1.1 | 3/3 | Complete | 2026-02-25 |
 | 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
 | 7. Surface and Camera Animation | 2/2 | Complete   | 2026-02-26 | 2026-02-26 |
-| 8. Scatter Points | v1.1 | 0/? | Not started | - |
+| 8. Scatter Points | v1.1 | 0/2 | Not started | - |
