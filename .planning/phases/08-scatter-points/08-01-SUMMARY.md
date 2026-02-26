@@ -4,7 +4,7 @@ plan: "01"
 subsystem: dataviz
 tags: [scatter, rendering, depth-sorting, animation, opacity]
 depends_on: []
-provides: [ScatterPlot, ScatterAnimation, depth_sorted_circles]
+provides: [ScatterPlot, depth_sorted_circles]
 affects: [src/dataviz/scatter_plot.rs, src/dataviz/surface_plot.rs]
 tech_stack:
   added: []
@@ -27,7 +27,7 @@ metrics:
   tasks_completed: 2
   files_created: 1
   files_modified: 2
-requirements_satisfied: [SCAT-01, SCAT-02]
+requirements-completed: [SCAT-01, SCAT-02]
 ---
 
 # Phase 08 Plan 01: ScatterPlot Struct and Depth-Sorted Circle Rendering Summary
