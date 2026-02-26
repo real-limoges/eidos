@@ -29,7 +29,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 
 - [x] **Phase 5: Camera and Projection Foundation** - Perspective projection math, Camera/CameraState structs, and the data-to-screen transform chain (completed 2026-02-25)
 - [x] **Phase 6: Static 3D Surface Rendering** - Wireframe mesh, shaded surface with z-height colormap, and 3D cartesian axes (completed 2026-02-26)
-- [ ] **Phase 7: Surface and Camera Animation** - Surface morphing from flat to fitted shape, and camera orbit animation
+- [x] **Phase 7: Surface and Camera Animation** - Surface morphing from flat to fitted shape, and camera orbit animation (completed 2026-02-26)
 - [ ] **Phase 8: Scatter Points** - 3D scatter point rendering with depth-based opacity and fade-in animation
 
 ## Phase Details
@@ -77,8 +77,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 07-01-PLAN.md — SurfacePlot animation infrastructure: fitted_zs, FitAnimation, animate_fit(), z_at(), to_primitives_at(), CameraAnimation, animate_camera_azimuth(), camera_at()
-- [ ] 07-02-PLAN.md — SceneBuilder::add_surface_at() wiring and integration test (morphing surface + orbiting camera → MP4)
+- [x] 07-01-PLAN.md — SurfacePlot animation infrastructure: fitted_zs, FitAnimation, animate_fit(), z_at(), to_primitives_at(), CameraAnimation, animate_camera_azimuth(), camera_at()
+- [x] 07-02-PLAN.md — SceneBuilder::add_surface_at() wiring and integration test (morphing surface + orbiting camera → MP4)
 
 ### Phase 8: Scatter Points
 **Goal**: Users can overlay raw (x, y, z) data points on a 3D surface plot, with depth-based opacity and optional fade-in animation
@@ -104,5 +104,5 @@ Plans:
 | 4.6. v1.0 API Ergonomics Cleanup | v1.0 | 1/1 | Complete | 2026-02-25 |
 | 5. Camera and Projection Foundation | v1.1 | 3/3 | Complete | 2026-02-25 |
 | 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
-| 7. Surface and Camera Animation | 1/2 | In Progress|  | - |
+| 7. Surface and Camera Animation | 2/2 | Complete   | 2026-02-26 | 2026-02-26 |
 | 8. Scatter Points | v1.1 | 0/? | Not started | - |

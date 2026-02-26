@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 7 IN PROGRESS — Surface and Camera Animation (Plan 01 done: FitAnimation, CameraAnimation, animate_fit(), z_at(), to_primitives_at(), animate_camera_azimuth(), camera_at())
+**Current focus:** Phase 7 COMPLETE — Surface and Camera Animation (Plan 02 done: SceneBuilder::add_surface_at(), three integration tests proving morphing + orbiting → MP4); Phase 8 next (Scatter Points)
 
 ## Current Position
 
-Phase: 7 of 8 (Surface and Camera Animation) — IN PROGRESS
-Plan: 1 complete (FitAnimation, CameraAnimation, animate_fit(), z_at(), to_primitives_at(), animate_camera_azimuth(), camera_at())
-Status: Phase 7 Plan 01 complete — ANIM-01, ANIM-02 satisfied; 114 lib tests passing
-Last activity: 2026-02-26 — 07-01 complete — surface morph and camera orbit animation infrastructure
+Phase: 7 of 8 (Surface and Camera Animation) — COMPLETE
+Plan: 2/2 complete (07-02: SceneBuilder::add_surface_at() + three integration tests → MP4)
+Status: Phase 7 complete — ANIM-01, ANIM-02 fully satisfied; 115 lib tests + 3 integration tests passing
+Last activity: 2026-02-26 — 07-02 complete — add_surface_at() wired, morphing+orbiting integration tests pass
 
-Progress: [███████░░░] ~70%
+Progress: [████████░░] ~80%
 
 ## Performance Metrics
 
@@ -55,6 +55,7 @@ Progress: [███████░░░] ~70%
 | Phase 06 P02 | 4 | 2 tasks | 3 files |
 | Phase 06 P03 | 3 | 2 tasks | 2 files |
 | Phase 07 P01 | 3 | 2 tasks | 1 file |
+| Phase 07 P02 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -93,6 +94,12 @@ Decisions from 05-03 execution:
 - [Phase 06]: Test data for to_primitives must use flat surface (all z=0) for predictable face normals — slanted surfaces have normals sensitive to camera angle
 - [Phase 06]: Painter's algorithm: precompute projected corner grid, backface cull via cross-product normal + dot product, sort back-to-front by squared centroid distance
 
+Decisions from 07-02 execution:
+
+- [07-02]: add_surface_at signature appends t_secs as final parameter after viewport — mirrors add_surface shape
+- [07-02]: camera_orbit_only_renders_to_mp4 uses add_surface (not add_surface_at) to verify backward compatibility during orbit
+- [07-02]: Three distinct test functions for combined/morph-only/orbit-only: separate failure attribution
+
 Decisions from 07-01 execution:
 
 - [07-01]: fitted_zs snapshot at SurfacePlot::new() — immutable; enables to_primitives_at(&self) safe for Fn closures
@@ -118,5 +125,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 07-01-PLAN.md — surface morph animation (FitAnimation, z_at, to_primitives_at) and camera orbit animation (CameraAnimation, animate_camera_azimuth, camera_at) added to SurfacePlot; 114 lib tests passing. ANIM-01 and ANIM-02 satisfied.
+Stopped at: Completed 07-02-PLAN.md — SceneBuilder::add_surface_at() added; three integration tests (surface_animation_renders_to_mp4, surface_morph_only_renders_to_mp4, camera_orbit_only_renders_to_mp4) pass. Phase 7 complete. ANIM-01 and ANIM-02 fully satisfied.
 Resume file: None
