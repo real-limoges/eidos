@@ -102,6 +102,6 @@ Plans:
 | 8. Scatter Points | v1.1 | 2/2 | Complete | 2026-02-26 |
 | 9. v1.1 Integration Test Coverage | v1.1 | 1/1 | Complete | 2026-02-26 |
 | 9.1. v1.1 SUMMARY Schema and Doc Fixes | v1.1 | 1/1 | Complete | 2026-02-26 |
-| 10. Infallible Builders | v1.2 | 0/2 | Planned | - |
+| 10. Infallible Builders | 1/2 | In Progress|  | - |
 | 11. State and Tween Ergonomics | v1.2 | 0/? | Not started | - |
 | 12. Coordinate Mapping | v1.2 | 0/? | Not started | - |

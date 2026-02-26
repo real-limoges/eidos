@@ -1,28 +1,24 @@
 # Requirements: eidos
 
-**Defined:** 2026-02-25
+**Defined:** 2026-02-26
 **Core Value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
 
-## v1.1 Requirements
+## v1.2 Requirements
 
-Requirements for the 3D Surface Visualization milestone. Each maps to roadmap phases.
+Requirements for the API Polish & Ergonomics milestone. Each maps to roadmap phases.
 
-### Surface Rendering
+### ERGO — State & Animation Ergonomics
 
-- [x] **SURF-01**: User can create a 3D surface plot from a regular grid of (x, y, z) data with a configurable camera viewpoint
-- [x] **SURF-02**: User can render the surface as a wireframe mesh (depth-sorted projected edges)
-- [x] **SURF-03**: User can render the surface as a shaded mesh with a z-height color gradient
-- [x] **SURF-04**: User can add 3D cartesian axes with projected tick marks and labels to a surface plot
+- [ ] **ERGO-01**: User can construct `CircleState`, `RectState`, `LineState`, and `TextState` using a `Color` value directly — no separate `fill_r`, `fill_g`, `fill_b` f64 channel fields required
+- [ ] **ERGO-02**: User can build a `Tween` using a fluent builder API (`.from()` / `.to()` / `.start_at()` / `.over()` / `.easing()`) instead of struct literal initialization
 
-### Scatter
+### COORD — Coordinate Mapping
 
-- [x] **SCAT-01**: User can add (x, y, z) scatter points to a 3D plot, rendered with depth-based opacity
-- [x] **SCAT-02**: User can animate scatter points fading in over a specified time range
+- [ ] **COORD-01**: User can call `axes.map_point(data_x: f64, data_y: f64) -> (f64, f64)` to convert data-space coordinates to pixel coordinates without writing manual coordinate transform math
 
-### Animation
+### API — API Consistency
 
-- [x] **ANIM-01**: User can animate the surface morphing from flat to fitted shape over a specified time range
-- [x] **ANIM-02**: User can animate the camera orbiting around the surface (azimuth sweep) over a specified time range
+- [x] **API-01**: All primitive builder methods that currently return `Result<Self>` (`.opacity()`, `.stroke()`, `.font_size()`) are changed to return `Self` — invalid values are clamped to valid ranges — so no builder chain ever requires `?`
 
 ## v2 Requirements
 
@@ -47,6 +43,8 @@ Deferred to future release. Tracked but not in current roadmap.
 | GPU rendering path | Breaks the SVG pipeline; only justified if software performance wall cannot be solved |
 | Python bindings | The whole point is to stay in Rust |
 | Real-time / streaming output | Video files only, by design |
+| Named parameters for primitive constructors | Rust doesn't support named args; struct literal already readable with IDE support |
+| `SurfacePlot::from_grid()` nested input | Row-major flat Vec is idiomatic Rust; nested vec adds allocation without clarity benefit |
 
 ## Traceability
 
@@ -54,20 +52,16 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| SURF-01 | Phase 5 + Phase 9 integration tests | Complete (05-01, 09-01) |
-| SURF-02 | Phase 6 + Phase 9 integration tests | Complete (06-01, 09-01) |
-| SURF-03 | Phase 6 | Complete |
-| SURF-04 | Phase 6 + Phase 9 integration tests | Complete (06-03, 09-01) |
-| SCAT-01 | Phase 8 | Complete |
-| SCAT-02 | Phase 8 | Complete |
-| ANIM-01 | Phase 7 | Complete |
-| ANIM-02 | Phase 7 | Complete |
+| ERGO-01 | Phase 11 | Pending |
+| ERGO-02 | Phase 11 | Pending |
+| COORD-01 | Phase 12 | Pending |
+| API-01 | Phase 10 | Complete |
 
 **Coverage:**
-- v1.1 requirements: 8 total
-- Mapped to phases: 8
+- v1.2 requirements: 4 total
+- Mapped to phases: 4
 - Unmapped: 0 ✓
 
 ---
-*Requirements defined: 2026-02-25*
-*Last updated: 2026-02-26 — Phase 9 integration test coverage added to SURF-01, SURF-02, SURF-04 traceability*
+*Requirements defined: 2026-02-26*
+*Last updated: 2026-02-26 — traceability updated after v1.2 roadmap creation*
