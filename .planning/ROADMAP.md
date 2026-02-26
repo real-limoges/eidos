@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0** — Phases 1–4.6 (shipped 2026-02-25)
-- 🚧 **v1.1 3D Surface Visualization** — Phases 5–8 (in progress)
+- ✅ **v1.1 3D Surface Visualization** — Phases 5–8 (completed 2026-02-26)
 
 ## Phases
 
@@ -30,7 +30,7 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 5: Camera and Projection Foundation** - Perspective projection math, Camera/CameraState structs, and the data-to-screen transform chain (completed 2026-02-25)
 - [x] **Phase 6: Static 3D Surface Rendering** - Wireframe mesh, shaded surface with z-height colormap, and 3D cartesian axes (completed 2026-02-26)
 - [x] **Phase 7: Surface and Camera Animation** - Surface morphing from flat to fitted shape, and camera orbit animation (completed 2026-02-26)
-- [ ] **Phase 8: Scatter Points** - 3D scatter point rendering with depth-based opacity and fade-in animation
+- [x] **Phase 8: Scatter Points** - 3D scatter point rendering with depth-based opacity and fade-in animation (completed 2026-02-26)
 
 ## Phase Details
 
@@ -91,8 +91,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 08-01-PLAN.md — ScatterPlot struct: coordinate normalization, depth opacity, behind-surface dimming, fade animation (SCAT-01, SCAT-02)
-- [ ] 08-02-PLAN.md — SceneBuilder::add_scatter/add_scatter_at wiring, depth-merge with painter's algorithm, integration tests → MP4
+- [x] 08-01-PLAN.md — ScatterPlot struct: coordinate normalization, depth opacity, behind-surface dimming, fade animation (SCAT-01, SCAT-02)
+- [x] 08-02-PLAN.md — SceneBuilder::add_scatter/add_scatter_at wiring, depth-merge with painter's algorithm, integration tests → MP4
 
 ## Progress
 
@@ -109,4 +109,4 @@ Plans:
 | 5. Camera and Projection Foundation | v1.1 | 3/3 | Complete | 2026-02-25 |
 | 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
 | 7. Surface and Camera Animation | 2/2 | Complete   | 2026-02-26 | 2026-02-26 |
-| 8. Scatter Points | 1/2 | In Progress|  | - |
+| 8. Scatter Points | v1.1 | 2/2 | Complete | 2026-02-26 |

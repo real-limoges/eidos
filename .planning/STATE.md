@@ -2,13 +2,13 @@
 gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 3D Surface Visualization
-status: unknown
-last_updated: "2026-02-26T02:47:27.014Z"
+status: complete
+last_updated: "2026-02-26T12:10:00.000Z"
 progress:
-  total_phases: 3
-  completed_phases: 3
-  total_plans: 8
-  completed_plans: 8
+  total_phases: 8
+  completed_phases: 8
+  total_plans: 20
+  completed_plans: 20
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 8 in progress — Scatter Points (Plan 01 done: ScatterPlot struct, depth-sorted circles, fade animation; Plan 02 next: SceneBuilder wiring)
+**Current focus:** Phase 8 COMPLETE — Scatter Points fully implemented and wired. SCAT-01, SCAT-02 satisfied. Full suite passing.
 
 ## Current Position
 
-Phase: 8 of 8 (Scatter Points) — IN PROGRESS
-Plan: 1/2 complete (08-01: ScatterPlot struct + depth-sorted circle rendering)
-Status: 08-01 complete — SCAT-01, SCAT-02 core logic implemented; 119 lib tests passing
-Last activity: 2026-02-26 — 08-01 complete — ScatterPlot::to_depth_sorted_circles, to_depth_sorted_circles_at, fade animation
+Phase: 8 of 8 (Scatter Points) — COMPLETE
+Plan: 2/2 complete (08-02: SceneBuilder wiring + integration tests)
+Status: 08-02 complete — ScatterPlot wired into SceneBuilder; SCAT-01 + SCAT-02 satisfied; 119 lib tests + 2 scatter integration tests passing
+Last activity: 2026-02-26 — 08-02 complete — add_scatter/add_scatter_at with depth-merge painter's algorithm
 
-Progress: [█████████░] ~90%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -57,6 +57,7 @@ Progress: [█████████░] ~90%
 | Phase 07 P01 | 3 | 2 tasks | 1 file |
 | Phase 07 P02 | 2 | 2 tasks | 2 files |
 | Phase 08 P01 | 2 | 2 tasks | 3 files |
+| Phase 08 P02 | 3 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -108,6 +109,14 @@ Decisions from 07-01 execution:
 - [07-01]: camera_at() returns None with no animations — caller uses static camera for no-animation case
 - [07-01]: FitAnimation and CameraAnimation are private structs — internal animation range records only
 
+Decisions from 08-02 execution:
+
+- [08-02]: SceneBuilder carries prim_depths Vec<f64> parallel to primitives — enables O(n+m) merge with scatter circles
+- [08-02]: add_surface/add_surface_at populate face_depths via visible_face_depths() — fast lightweight depth-only loop
+- [08-02]: Non-surface primitives (axes, labels, add()) get prim_depths = NEG_INFINITY — always painted on top
+- [08-02]: add_scatter and add_scatter_at are identical — alias for ergonomic consistency with add_surface_at
+- [08-02]: merge_scatter clones circle primitives — Primitive derives Clone; avoids complex ownership gymnastics
+
 Decisions from 08-01 execution:
 
 - [08-01]: ScatterPlot uses exponential depth falloff (-3t exponent) — visually smoother than linear falloff
@@ -133,5 +142,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 08-01-PLAN.md — ScatterPlot struct created; to_depth_sorted_circles, to_depth_sorted_circles_at implemented with exponential depth falloff, behind-surface dimming, and fade animation. 4 scatter tests + 115 prior = 119 total passing. SCAT-01 and SCAT-02 core logic done.
+Stopped at: Completed 08-02-PLAN.md — ScatterPlot wired into SceneBuilder with depth-merge painter's algorithm. add_scatter/add_scatter_at + prim_depths/face_depths fields added. Two integration tests pass: SCAT-01 (static scatter MP4) and SCAT-02 (animated scatter MP4). Phase 8 complete.
 Resume file: None
