@@ -413,6 +413,95 @@ impl SurfacePlot {
         self.show_base_grid
     }
 
+    /// Returns the squared centroid distances for all backface-culled visible faces.
+    ///
+    /// Used by SceneBuilder to provide face_depths to add_scatter / add_scatter_at.
+    /// This is a lightweight version of to_primitives() — runs backface cull and centroid
+    /// depth computation without building any SVG primitives.
+    pub fn visible_face_depths(&self, camera: &Camera, viewport: (u32, u32)) -> Vec<f64> {
+        use crate::dataviz::camera::Vector3D;
+        let _ = viewport; // not needed for depth-only computation, but kept for API consistency
+
+        let (eye_x, eye_y, eye_z) = camera.eye_position();
+        let face_count = (self.rows - 1) * (self.cols - 1);
+        let mut depths: Vec<f64> = Vec::with_capacity(face_count);
+
+        for r in 0..(self.rows - 1) {
+            for c in 0..(self.cols - 1) {
+                let p00 = self.world_point(r, c);
+                let p01 = self.world_point(r, c + 1);
+                let p10 = self.world_point(r + 1, c);
+                let p11 = self.world_point(r + 1, c + 1);
+
+                let ex = p01.x - p00.x; let ey = p01.y - p00.y; let ez = p01.z - p00.z;
+                let fx = p10.x - p00.x; let fy = p10.y - p00.y; let fz = p10.z - p00.z;
+                let normal = Vector3D {
+                    x: ey * fz - ez * fy,
+                    y: ez * fx - ex * fz,
+                    z: ex * fy - ey * fx,
+                };
+
+                if !camera.is_face_visible(normal) { continue; }
+
+                let cx = (p00.x + p01.x + p10.x + p11.x) / 4.0;
+                let cy = (p00.y + p01.y + p10.y + p11.y) / 4.0;
+                let cz = (p00.z + p01.z + p10.z + p11.z) / 4.0;
+                let dx = cx - eye_x; let dy = cy - eye_y; let dz = cz - eye_z;
+                depths.push(dx*dx + dy*dy + dz*dz);
+            }
+        }
+
+        depths
+    }
+
+    /// Same as visible_face_depths() but uses animated z-values at t_secs.
+    ///
+    /// Used by SceneBuilder::add_surface_at() to provide correct face_depths
+    /// that match the animated surface geometry used by to_primitives_at().
+    pub fn visible_face_depths_at(&self, camera: &Camera, viewport: (u32, u32), t_secs: f64) -> Vec<f64> {
+        use crate::dataviz::camera::Vector3D;
+        let _ = viewport;
+
+        // Build animated world vertices
+        let animated: Vec<Point3D> = self.world_vertices
+            .iter()
+            .enumerate()
+            .map(|(i, p)| Point3D { x: p.x, y: p.y, z: self.z_at(self.fitted_zs[i], t_secs) })
+            .collect();
+        let anim_point = |r: usize, c: usize| -> Point3D { animated[r * self.cols + c] };
+
+        let (eye_x, eye_y, eye_z) = camera.eye_position();
+        let face_count = (self.rows - 1) * (self.cols - 1);
+        let mut depths: Vec<f64> = Vec::with_capacity(face_count);
+
+        for r in 0..(self.rows - 1) {
+            for c in 0..(self.cols - 1) {
+                let p00 = anim_point(r, c);
+                let p01 = anim_point(r, c + 1);
+                let p10 = anim_point(r + 1, c);
+                let p11 = anim_point(r + 1, c + 1);
+
+                let ex = p01.x - p00.x; let ey = p01.y - p00.y; let ez = p01.z - p00.z;
+                let fx = p10.x - p00.x; let fy = p10.y - p00.y; let fz = p10.z - p00.z;
+                let normal = Vector3D {
+                    x: ey * fz - ez * fy,
+                    y: ez * fx - ex * fz,
+                    z: ex * fy - ey * fx,
+                };
+
+                if !camera.is_face_visible(normal) { continue; }
+
+                let cx = (p00.x + p01.x + p10.x + p11.x) / 4.0;
+                let cy = (p00.y + p01.y + p10.y + p11.y) / 4.0;
+                let cz = (p00.z + p01.z + p10.z + p11.z) / 4.0;
+                let dx = cx - eye_x; let dy = cy - eye_y; let dz = cz - eye_z;
+                depths.push(dx*dx + dy*dy + dz*dz);
+            }
+        }
+
+        depths
+    }
+
     /// Render this surface plot to a list of SVG-ready primitives.
     ///
     /// Uses the painter's algorithm: backface-cull invisible faces, sort remaining
