@@ -3,7 +3,7 @@ gsd_state_version: 1.0
 milestone: v1.0
 milestone_name: 3D Surface Visualization
 status: unknown
-last_updated: "2026-02-26T01:56:08.000Z"
+last_updated: "2026-02-26T02:01:34.233Z"
 progress:
   total_phases: 2
   completed_phases: 2
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 6 COMPLETE — Static 3D Surface Rendering (Plans 01-03 done: viridis colormap, camera, surface_plot builder; to_primitives() painter's algorithm; 3D axis rendering with tick marks and labels)
+**Current focus:** Phase 7 IN PROGRESS — Surface and Camera Animation (Plan 01 done: FitAnimation, CameraAnimation, animate_fit(), z_at(), to_primitives_at(), animate_camera_azimuth(), camera_at())
 
 ## Current Position
 
-Phase: 6 of 8 (Static 3D Surface Rendering) — COMPLETE
-Plan: 3 complete (3D axis rendering integrated into to_primitives(), far_floor_corner quadrant selection, draw_axes() helper)
-Status: Phase 6 complete — SURF-02, SURF-03, SURF-04 all satisfied
-Last activity: 2026-02-26 — 06-03 complete — 3D axis rendering, 101 lib tests passing
+Phase: 7 of 8 (Surface and Camera Animation) — IN PROGRESS
+Plan: 1 complete (FitAnimation, CameraAnimation, animate_fit(), z_at(), to_primitives_at(), animate_camera_azimuth(), camera_at())
+Status: Phase 7 Plan 01 complete — ANIM-01, ANIM-02 satisfied; 114 lib tests passing
+Last activity: 2026-02-26 — 07-01 complete — surface morph and camera orbit animation infrastructure
 
-Progress: [██████░░░░] ~60%
+Progress: [███████░░░] ~70%
 
 ## Performance Metrics
 
@@ -54,6 +54,7 @@ Progress: [██████░░░░] ~60%
 | Phase 06 P01 | 14 | 2 tasks | 4 files |
 | Phase 06 P02 | 4 | 2 tasks | 3 files |
 | Phase 06 P03 | 3 | 2 tasks | 2 files |
+| Phase 07 P01 | 3 | 2 tasks | 1 file |
 
 ## Accumulated Context
 
@@ -92,6 +93,13 @@ Decisions from 05-03 execution:
 - [Phase 06]: Test data for to_primitives must use flat surface (all z=0) for predictable face normals — slanted surfaces have normals sensitive to camera angle
 - [Phase 06]: Painter's algorithm: precompute projected corner grid, backface cull via cross-product normal + dot product, sort back-to-front by squared centroid distance
 
+Decisions from 07-01 execution:
+
+- [07-01]: fitted_zs snapshot at SurfacePlot::new() — immutable; enables to_primitives_at(&self) safe for Fn closures
+- [07-01]: z_at() hold semantics: before first window=0.0 (flat), after last=fitted_z, gap between ranges=fitted_z
+- [07-01]: camera_at() returns None with no animations — caller uses static camera for no-animation case
+- [07-01]: FitAnimation and CameraAnimation are private structs — internal animation range records only
+
 Decisions from 06-03 execution:
 
 - [06-03]: far_floor_corner uses integer cast (az as u32) for 4-quadrant match — avoids floating-point edge cases at boundaries; 360.0 normalizes to 0 via modulo
@@ -110,5 +118,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Completed 06-03-PLAN.md — 3D axis rendering integrated into to_primitives(), far_floor_corner quadrant selection, draw_axes() helper, 101 lib tests passing. Phase 6 COMPLETE — SURF-02, SURF-03, SURF-04 all satisfied.
+Stopped at: Completed 07-01-PLAN.md — surface morph animation (FitAnimation, z_at, to_primitives_at) and camera orbit animation (CameraAnimation, animate_camera_azimuth, camera_at) added to SurfacePlot; 114 lib tests passing. ANIM-01 and ANIM-02 satisfied.
 Resume file: None

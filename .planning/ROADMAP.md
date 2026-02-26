@@ -104,5 +104,5 @@ Plans:
 | 4.6. v1.0 API Ergonomics Cleanup | v1.0 | 1/1 | Complete | 2026-02-25 |
 | 5. Camera and Projection Foundation | v1.1 | 3/3 | Complete | 2026-02-25 |
 | 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
-| 7. Surface and Camera Animation | v1.1 | 0/2 | Not started | - |
+| 7. Surface and Camera Animation | 1/2 | In Progress|  | - |
 | 8. Scatter Points | v1.1 | 0/? | Not started | - |

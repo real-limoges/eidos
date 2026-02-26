@@ -10,9 +10,9 @@ Requirements for the 3D Surface Visualization milestone. Each maps to roadmap ph
 ### Surface Rendering
 
 - [x] **SURF-01**: User can create a 3D surface plot from a regular grid of (x, y, z) data with a configurable camera viewpoint
-- [ ] **SURF-02**: User can render the surface as a wireframe mesh (depth-sorted projected edges)
-- [ ] **SURF-03**: User can render the surface as a shaded mesh with a z-height color gradient
-- [ ] **SURF-04**: User can add 3D cartesian axes with projected tick marks and labels to a surface plot
+- [x] **SURF-02**: User can render the surface as a wireframe mesh (depth-sorted projected edges)
+- [x] **SURF-03**: User can render the surface as a shaded mesh with a z-height color gradient
+- [x] **SURF-04**: User can add 3D cartesian axes with projected tick marks and labels to a surface plot
 
 ### Scatter
 
@@ -21,8 +21,8 @@ Requirements for the 3D Surface Visualization milestone. Each maps to roadmap ph
 
 ### Animation
 
-- [ ] **ANIM-01**: User can animate the surface morphing from flat to fitted shape over a specified time range
-- [ ] **ANIM-02**: User can animate the camera orbiting around the surface (azimuth sweep) over a specified time range
+- [x] **ANIM-01**: User can animate the surface morphing from flat to fitted shape over a specified time range
+- [x] **ANIM-02**: User can animate the camera orbiting around the surface (azimuth sweep) over a specified time range
 
 ## v2 Requirements
 
@@ -55,13 +55,13 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | SURF-01 | Phase 5 | Complete (05-01) |
-| SURF-02 | Phase 6 | Pending |
-| SURF-03 | Phase 6 | Pending |
-| SURF-04 | Phase 6 | Pending |
+| SURF-02 | Phase 6 | Complete |
+| SURF-03 | Phase 6 | Complete |
+| SURF-04 | Phase 6 | Complete |
 | SCAT-01 | Phase 8 | Pending |
 | SCAT-02 | Phase 8 | Pending |
-| ANIM-01 | Phase 7 | Pending |
-| ANIM-02 | Phase 7 | Pending |
+| ANIM-01 | Phase 7 | Complete |
+| ANIM-02 | Phase 7 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 8 total
