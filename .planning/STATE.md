@@ -1,14 +1,14 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.1
+milestone: v1.0
 milestone_name: 3D Surface Visualization
-status: in_progress
-last_updated: "2026-02-25T21:08:21Z"
+status: unknown
+last_updated: "2026-02-26T01:44:57.853Z"
 progress:
-  total_phases: 4
-  completed_phases: 0
-  total_plans: 0
-  completed_plans: 3
+  total_phases: 2
+  completed_phases: 1
+  total_plans: 6
+  completed_plans: 4
 ---
 
 # Project State
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 5 — Camera and Projection Foundation (Plan 03 complete — Phase 5 done, SURF-01 satisfied)
+**Current focus:** Phase 6 — Static 3D Surface Rendering (Plan 01 complete — colormap, Camera::eye_position, RenderMode, data extents)
 
 ## Current Position
 
-Phase: 5 of 8 (Camera and Projection Foundation)
-Plan: 3 complete (public API wiring done — Camera and SurfacePlot at crate root)
+Phase: 6 of 8 (Static 3D Surface Rendering)
+Plan: 1 complete (colormap.rs, eye_position, RenderMode enum, SurfacePlot builder methods)
 Status: In progress
-Last activity: 2026-02-25 — 05-03 complete — Phase 5 fully wired, SURF-01 satisfied, 99 tests passing
+Last activity: 2026-02-26 — 06-01 complete — viridis colormap, Camera::eye_position(), RenderMode, data extents, 111 tests passing
 
-Progress: [███░░░░░░░] ~30%
+Progress: [████░░░░░░] ~40%
 
 ## Performance Metrics
 
@@ -51,6 +51,7 @@ Progress: [███░░░░░░░] ~30%
 | 05-03 (public API wiring) | 1 | ~1 min |
 
 *Updated after each plan completion*
+| Phase 06 P01 | 14 | 2 tasks | 4 files |
 
 ## Accumulated Context
 
@@ -83,6 +84,9 @@ Decisions from 05-03 execution:
 - [05-03]: Phase 5 types added alphabetically to existing pub use dataviz::{} line in lib.rs — consistent with v1.0 ergonomics
 - [05-03]: dataviz/mod.rs pub mod declarations ordered alphabetically (camera before confidence_band, surface_plot at end)
 - [05-03]: SURF-01 fully satisfied — use eidos::Camera and use eidos::SurfacePlot are valid import paths
+- [Phase 06-01]: Viridis LUT test: b>100 incompatible with canonical data (b=84); changed to b>g && b>50
+- [Phase 06-01]: data_extents captured before normalize_to_world_space — only correct placement for axis tick labels
+- [Phase 06-01]: eye_position() recomputes from spherical params at call time — consistent with Camera::new formula
 
 ### Pending Todos
 
@@ -95,6 +99,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-02-25
-Stopped at: Completed 05-03-PLAN.md — public API wiring, SURF-01 satisfied, 99 tests passing.
+Last session: 2026-02-26
+Stopped at: Completed 06-01-PLAN.md — colormap.rs, Camera::eye_position(), RenderMode, SurfacePlot data extents + builders, 111 tests passing.
 Resume file: None
