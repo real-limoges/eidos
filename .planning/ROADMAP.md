@@ -3,7 +3,7 @@
 ## Milestones
 
 - ✅ **v1.0** — Phases 1–4.6 (shipped 2026-02-25)
-- ✅ **v1.1 3D Surface Visualization** — Phases 5–8 (completed 2026-02-26)
+- 🚧 **v1.1 3D Surface Visualization** — Phases 5–9.1 (in progress — cleanup phases)
 
 ## Phases
 
@@ -31,6 +31,8 @@ Full phase details: `.planning/milestones/v1.0-ROADMAP.md`
 - [x] **Phase 6: Static 3D Surface Rendering** - Wireframe mesh, shaded surface with z-height colormap, and 3D cartesian axes (completed 2026-02-26)
 - [x] **Phase 7: Surface and Camera Animation** - Surface morphing from flat to fitted shape, and camera orbit animation (completed 2026-02-26)
 - [x] **Phase 8: Scatter Points** - 3D scatter point rendering with depth-based opacity and fade-in animation (completed 2026-02-26)
+- [ ] **Phase 9: v1.1 Integration Test Coverage** - Close E2E test gaps identified in audit: render_static() surface flow, Wireframe/ShadedWireframe render modes, axis primitive assertion
+- [ ] **Phase 9.1: v1.1 SUMMARY Schema and Doc Fixes** - Fix SUMMARY frontmatter key mismatch (requirements_satisfied → requirements_completed) and doc inaccuracies for draw_axes() and ScatterAnimation visibility
 
 ## Phase Details
 
@@ -94,6 +96,36 @@ Plans:
 - [x] 08-01-PLAN.md — ScatterPlot struct: coordinate normalization, depth opacity, behind-surface dimming, fade animation (SCAT-01, SCAT-02)
 - [x] 08-02-PLAN.md — SceneBuilder::add_scatter/add_scatter_at wiring, depth-merge with painter's algorithm, integration tests → MP4
 
+### Phase 9: v1.1 Integration Test Coverage
+**Goal**: Close all E2E integration test gaps identified in the v1.1 milestone audit — `render_static()` surface flow, wireframe/shaded-wireframe render modes, and axis primitive assertion
+**Depends on**: Phase 8
+**Requirements**: SURF-01, SURF-02, SURF-04 (test coverage, not new implementation)
+**Gap Closure**: Closes test gaps from v1.1-MILESTONE-AUDIT.md
+**Success Criteria** (what must be TRUE):
+  1. `static_surface_renders_to_mp4` integration test: `SurfacePlot::new()` → `scene.render_static()` → MP4 > 1000 bytes (E2E Flow 1)
+  2. `wireframe_surface_renders_to_mp4` integration test: `RenderMode::Wireframe` set → `render_static()` → MP4 > 1000 bytes
+  3. `shaded_wireframe_surface_renders_to_mp4` integration test: `RenderMode::ShadedWireframe` → MP4 > 1000 bytes
+  4. Unit-level assertion that `to_primitives()` output contains both face primitives (Bezier) and axis primitives (Line/Text)
+**Plans**: 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md — Integration tests for render_static(), Wireframe, ShadedWireframe, and axis primitive presence
+
+### Phase 9.1: v1.1 SUMMARY Schema and Doc Fixes
+**Goal**: Fix SUMMARY frontmatter key mismatch and documentation inaccuracies flagged in the v1.1 audit so future audits produce clean 3-source cross-reference results
+**Depends on**: Phase 9
+**Requirements**: None (documentation-only)
+**Gap Closure**: Closes schema/doc items from v1.1-MILESTONE-AUDIT.md
+**Success Criteria** (what must be TRUE):
+  1. `08-01-SUMMARY.md` uses `requirements_completed: [SCAT-01, SCAT-02]` (was `requirements_satisfied`)
+  2. Phase 06 SUMMARY correctly describes `draw_axes()` as a private method called automatically by `to_primitives()`
+  3. Phase 08 SUMMARY correctly describes `ScatterAnimation` as a private implementation detail
+  4. `gsd-tools summary-extract` on 08-01-SUMMARY.md returns `[SCAT-01, SCAT-02]` for `requirements_completed`
+**Plans**: 1 plan
+
+Plans:
+- [ ] 09.1-01-PLAN.md — SUMMARY frontmatter and documentation fixes
+
 ## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
@@ -110,3 +142,5 @@ Plans:
 | 6. Static 3D Surface Rendering | 3/3 | Complete   | 2026-02-26 | - |
 | 7. Surface and Camera Animation | 2/2 | Complete   | 2026-02-26 | 2026-02-26 |
 | 8. Scatter Points | v1.1 | 2/2 | Complete | 2026-02-26 |
+| 9. v1.1 Integration Test Coverage | v1.1 | 0/1 | Pending | - |
+| 9.1. v1.1 SUMMARY Schema and Doc Fixes | v1.1 | 0/1 | Pending | - |
