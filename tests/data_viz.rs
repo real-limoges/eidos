@@ -19,9 +19,9 @@ fn data_curve_new_two_points_ok() {
 }
 
 #[test]
-fn data_curve_negative_stroke_width_err() {
+fn data_curve_negative_stroke_width_is_clamped() {
     let c = DataCurve::new(vec![(0.0, 0.0), (1.0, 1.0)]).unwrap();
-    assert!(c.stroke(Color::WHITE, -1.0).is_err());
+    assert_eq!(c.stroke(Color::WHITE, -1.0).stroke_width, 0.0);
 }
 
 #[test]

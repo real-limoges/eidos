@@ -22,10 +22,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // --- ConfidenceBand: cornflower blue fill, 25% opacity ---
     let band = ConfidenceBand::new(upper.clone(), lower.clone())?
         .fill_color(Color::rgb(100, 149, 237))
-        .opacity(0.25)?;
+        .opacity(0.25);
 
     // --- DataCurve: white fitted line, width 2.0 ---
-    let data_curve = DataCurve::new(fitted.clone())?.stroke(Color::WHITE, 2.0)?;
+    let data_curve = DataCurve::new(fitted.clone())?.stroke(Color::WHITE, 2.0);
 
     // --- Axes with explicit ranges and titles ---
     let axes = Axes::new(80.0, 60.0, 1100.0, 580.0)
@@ -39,7 +39,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // --- SplineFit: animated from t=0.5 to t=3.5 with EaseInOut ---
     let spline = SplineFit::new(fitted.clone())?
         .color(Color::rgb(255, 200, 50))
-        .stroke_width(2.5)?
+        .stroke_width(2.5)
         .animate_fit(0.5, 3.0, Easing::EaseInOut);
 
     // Map fitted points to visual space using Axes::plot_bounds() -- guaranteed to match

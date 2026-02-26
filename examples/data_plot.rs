@@ -28,10 +28,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     let sine_curve = DataCurve::new(sine_data)?
-        .stroke(Color::CYAN, 2.5)?;
+        .stroke(Color::CYAN, 2.5);
 
     let cosine_curve = DataCurve::new(cosine_data)?
-        .stroke(Color::rgb(255, 165, 0), 2.5)?;  // orange
+        .stroke(Color::rgb(255, 165, 0), 2.5);  // orange
 
     // Axes auto-range -- both curves fit within [-1.1, 1.1] y with 7% padding
     let axes = Axes::new(80.0, 60.0, 840.0, 480.0)

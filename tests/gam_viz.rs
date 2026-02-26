@@ -25,8 +25,7 @@ fn confidence_band_renders_to_mp4() {
     let band = ConfidenceBand::new(upper.clone(), lower.clone())
         .expect("valid band")
         .fill_color(Color::rgb(100, 149, 237))
-        .opacity(0.25)
-        .expect("valid opacity");
+        .opacity(0.25);
 
     let fitted = vec![(0.0, 1.0), (5.0, 0.2), (10.0, 0.8)];
     let curve = DataCurve::new(fitted).expect("valid curve");
@@ -61,7 +60,6 @@ fn spline_fit_animation_renders_to_mp4() {
         .expect("valid spline")
         .color(Color::rgb(255, 200, 50))
         .stroke_width(2.5)
-        .expect("valid width")
         .animate_fit(0.0, 2.0, Easing::EaseOut);
 
     let axes = Axes::new(80.0, 60.0, 800.0, 500.0)
