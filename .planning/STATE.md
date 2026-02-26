@@ -1,9 +1,9 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.0
+milestone: v1.1
 milestone_name: 3D Surface Visualization
-status: unknown
-last_updated: "2026-02-26T12:54:19.349Z"
+status: complete
+last_updated: "2026-02-26T22:00:00.000Z"
 progress:
   total_phases: 6
   completed_phases: 6
@@ -18,7 +18,7 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-25)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 09.1 COMPLETE — v1.1 summary schema and doc fixes. 08-01-SUMMARY.md requirements-completed key corrected; ScatterAnimation removed from provides list; 06-03-SUMMARY.md draw_axes() accuracy verified.
+**Current focus:** Milestone v1.1 COMPLETE — 3D Surface Visualization shipped 2026-02-26. Planning next milestone.
 
 ## Current Position
 
