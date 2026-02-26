@@ -46,12 +46,33 @@ impl SceneBuilder {
         }
         self
     }
+
+    /// Decompose an animated SurfacePlot into primitives at scene time t_secs.
+    ///
+    /// Uses to_primitives_at() internally — surface vertices are animated (via animate_fit)
+    /// and the camera azimuth should be resolved via plot.camera_at(t_secs) before calling this.
+    ///
+    /// For static surfaces (no animate_fit called), this produces the same output as add_surface.
+    /// For animated surfaces, call this instead of add_surface inside Scene::render closures.
+    pub fn add_surface_at(
+        &mut self,
+        plot: &crate::dataviz::SurfacePlot,
+        camera: &crate::dataviz::Camera,
+        viewport: (u32, u32),
+        t_secs: f64,
+    ) -> &mut Self {
+        for prim in plot.to_primitives_at(camera, viewport, t_secs) {
+            self.primitives.push(prim);
+        }
+        self
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::dataviz::{SurfacePlot, Camera};
+    use crate::animation::Easing;
 
     #[test]
     fn add_surface_adds_primitives_to_builder() {
@@ -66,6 +87,21 @@ mod tests {
         let mut sb = SceneBuilder { primitives: vec![] };
         sb.add_surface(&plot, &camera, (800, 600));
         assert!(!sb.primitives.is_empty(), "add_surface should produce at least one primitive");
+    }
+
+    #[test]
+    fn add_surface_at_produces_primitives() {
+        // Flat 2x2 grid with morph animation registered
+        let plot = SurfacePlot::new(
+            vec![0.0, 1.0, 0.0, 1.0],
+            vec![0.0, 0.0, 1.0, 1.0],
+            vec![0.0, 0.0, 0.0, 0.0],
+            2, 2,
+        ).animate_fit(0.0, 3.0, Easing::Linear);
+        let camera = Camera::new(45.0, 30.0, 3.0);
+        let mut sb = SceneBuilder { primitives: vec![] };
+        sb.add_surface_at(&plot, &camera, (800, 600), 1.5);
+        assert!(!sb.primitives.is_empty(), "add_surface_at should produce primitives");
     }
 }
 
