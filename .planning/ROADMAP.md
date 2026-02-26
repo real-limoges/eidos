@@ -43,7 +43,7 @@ Full phase details: `.planning/milestones/v1.1-ROADMAP.md`
 **Milestone Goal:** Eliminate the most common friction points in the eidos API — verbose animation state construction, manual coordinate math, and unpredictable `?` in builder chains.
 
 - [x] **Phase 10: Infallible Builders** — All primitive builder methods return `Self` with clamped values; no `?` required (completed 2026-02-26)
-- [ ] **Phase 11: State and Tween Ergonomics** — State types accept `Color` directly; `Tween` fluent builder API
+- [x] **Phase 11: State and Tween Ergonomics** — State types accept `Color` directly; `Tween` fluent builder API (1 plan) (completed 2026-02-26)
 - [ ] **Phase 12: Coordinate Mapping** — `Axes::map_point()` data-to-pixel coordinate helper
 
 ## Phase Details
@@ -72,7 +72,9 @@ Plans:
   2. Same `Color`-based construction works for `RectState`, `LineState`, and `TextState`
   3. User can write `Tween::builder().from(s1).to(s2).start_at(0.0).over(1.0).build()` (or equivalent fluent chain) instead of a struct literal
   4. Existing code that used struct literal `Tween { .. }` either still compiles or has a clear migration path
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 11-01-PLAN.md — Add Color-based State constructors + TweenBuilder fluent API + migrate all callers
 
 ### Phase 12: Coordinate Mapping
 **Goal**: Users can convert data-space coordinates to pixel coordinates via a single method call on `Axes`, eliminating manual transform math in examples and user code
@@ -102,6 +104,6 @@ Plans:
 | 8. Scatter Points | v1.1 | 2/2 | Complete | 2026-02-26 |
 | 9. v1.1 Integration Test Coverage | v1.1 | 1/1 | Complete | 2026-02-26 |
 | 9.1. v1.1 SUMMARY Schema and Doc Fixes | v1.1 | 1/1 | Complete | 2026-02-26 |
-| 10. Infallible Builders | 2/2 | Complete   | 2026-02-26 | - |
-| 11. State and Tween Ergonomics | v1.2 | 0/? | Not started | - |
+| 10. Infallible Builders | 2/2 | Complete    | 2026-02-26 | - |
+| 11. State and Tween Ergonomics | 1/1 | Complete   | 2026-02-26 | - |
 | 12. Coordinate Mapping | v1.2 | 0/? | Not started | - |

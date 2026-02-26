@@ -9,8 +9,8 @@ Requirements for the API Polish & Ergonomics milestone. Each maps to roadmap pha
 
 ### ERGO — State & Animation Ergonomics
 
-- [ ] **ERGO-01**: User can construct `CircleState`, `RectState`, `LineState`, and `TextState` using a `Color` value directly — no separate `fill_r`, `fill_g`, `fill_b` f64 channel fields required
-- [ ] **ERGO-02**: User can build a `Tween` using a fluent builder API (`.from()` / `.to()` / `.start_at()` / `.over()` / `.easing()`) instead of struct literal initialization
+- [x] **ERGO-01**: User can construct `CircleState`, `RectState`, `LineState`, and `TextState` using a `Color` value directly — no separate `fill_r`, `fill_g`, `fill_b` f64 channel fields required
+- [x] **ERGO-02**: User can build a `Tween` using a fluent builder API (`.from()` / `.to()` / `.start_at()` / `.over()` / `.easing()`) instead of struct literal initialization
 
 ### COORD — Coordinate Mapping
 
@@ -52,8 +52,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ERGO-01 | Phase 11 | Pending |
-| ERGO-02 | Phase 11 | Pending |
+| ERGO-01 | Phase 11 | Complete |
+| ERGO-02 | Phase 11 | Complete |
 | COORD-01 | Phase 12 | Pending |
 | API-01 | Phase 10 | Complete |
 

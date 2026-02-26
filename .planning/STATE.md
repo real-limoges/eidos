@@ -1,12 +1,12 @@
 ---
 gsd_state_version: 1.0
-milestone: v1.2
-milestone_name: API Polish & Ergonomics
-status: in_progress
-last_updated: "2026-02-26T00:42:30.000Z"
+milestone: v1.0
+milestone_name: — API Polish & Ergonomics
+status: in-progress
+last_updated: "2026-02-26T23:20:56Z"
 progress:
-  total_phases: 3
-  completed_phases: 0
+  total_phases: 1
+  completed_phases: 1
   total_plans: 2
   completed_plans: 2
 ---
@@ -18,16 +18,16 @@ progress:
 See: .planning/PROJECT.md (updated 2026-02-26)
 
 **Core value:** A Rust-native way to produce beautiful, animated data visualizations with a declarative API — no Python, no GUI, just code that describes a scene and produces a video.
-**Current focus:** Phase 10 — Infallible Builders (v1.2, plan 02 complete)
+**Current focus:** Phase 11 — State & Tween Ergonomics (v1.2, plan 01 complete — phase complete)
 
 ## Current Position
 
-Phase: 10 of 12 (Infallible Builders)
-Plan: 02 complete — phase complete
+Phase: 11 of 12 (State & Tween Ergonomics)
+Plan: 01 complete — phase complete
 Status: In progress
-Last activity: 2026-02-26 — Phase 10 Plan 02 complete: all dataviz callers updated, cargo test passes
+Last activity: 2026-02-26 — Phase 11 Plan 01 complete: Color constructors & TweenBuilder API added, all callers migrated
 
-Progress: [██░░░░░░░░] 20% (v1.2)
+Progress: [███░░░░░░░] 30% (v1.2)
 
 ## Performance Metrics
 
@@ -37,6 +37,7 @@ Progress: [██░░░░░░░░] 20% (v1.2)
 | Phase | Plans | Avg/Plan |
 |-------|-------|----------|
 | 05–09.1 (v1.1) | 12 | ~2–3 min |
+| 11 (State & Tween Ergonomics) | 1 | 4 min |
 
 *Updated after each plan completion*
 
@@ -53,6 +54,7 @@ Relevant decisions for v1.2 work:
 - [Phase 10-02]: DataCurve, ConfidenceBand, SplineFit dataviz builders also converted to infallible — EidosError retained only in ::new() for point-count validation
 - [v1.0]: All user-facing types re-exported at crate root
 - [Phase 09.1-01]: requirements-completed YAML key uses hyphens (not underscores) — gsd-tools reads fm['requirements-completed']
+- [Phase 11-01]: Tween::build() returns TweenBuilder; all State types get ::new() accepting Color — fields remain pub for backward compat
 
 ### Pending Todos
 
@@ -65,5 +67,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-26
-Stopped at: Phase 10 Plan 02 complete — infallible builder refactor done across entire codebase; API-01 requirement fulfilled.
+Stopped at: Phase 11 Plan 01 complete — Color constructors & TweenBuilder API added, all callers migrated; ERGO-01 & ERGO-02 fulfilled.
 Resume file: None
