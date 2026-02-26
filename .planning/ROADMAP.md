@@ -44,7 +44,7 @@ Full phase details: `.planning/milestones/v1.1-ROADMAP.md`
 
 - [x] **Phase 10: Infallible Builders** — All primitive builder methods return `Self` with clamped values; no `?` required (completed 2026-02-26)
 - [x] **Phase 11: State and Tween Ergonomics** — State types accept `Color` directly; `Tween` fluent builder API (1 plan) (completed 2026-02-26)
-- [ ] **Phase 12: Coordinate Mapping** — `Axes::map_point()` data-to-pixel coordinate helper
+- [x] **Phase 12: Coordinate Mapping** — `Axes::map_point()` data-to-pixel coordinate helper (completed 2026-02-26)
 
 ## Phase Details
 
@@ -84,7 +84,9 @@ Plans:
   1. User can call `axes.map_point(data_x, data_y)` and receive `(pixel_x, pixel_y)` as `(f64, f64)`
   2. The returned pixel coordinates match what the manual transform in existing examples produces for the same input
   3. `map_point` is accessible on an `Axes` value after calling `scene.add_axes(...)` — no internal type required
-**Plans**: TBD
+**Plans**: 1 plan
+Plans:
+- [ ] 12-01-PLAN.md — Add map_point method to Axes and migrate all manual coordinate transforms
 
 ## Progress
 
@@ -105,5 +107,5 @@ Plans:
 | 9. v1.1 Integration Test Coverage | v1.1 | 1/1 | Complete | 2026-02-26 |
 | 9.1. v1.1 SUMMARY Schema and Doc Fixes | v1.1 | 1/1 | Complete | 2026-02-26 |
 | 10. Infallible Builders | 2/2 | Complete    | 2026-02-26 | - |
-| 11. State and Tween Ergonomics | 1/1 | Complete   | 2026-02-26 | - |
-| 12. Coordinate Mapping | v1.2 | 0/? | Not started | - |
+| 11. State and Tween Ergonomics | 1/1 | Complete    | 2026-02-26 | - |
+| 12. Coordinate Mapping | 1/1 | Complete   | 2026-02-26 | - |

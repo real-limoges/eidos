@@ -14,7 +14,7 @@ Requirements for the API Polish & Ergonomics milestone. Each maps to roadmap pha
 
 ### COORD — Coordinate Mapping
 
-- [ ] **COORD-01**: User can call `axes.map_point(data_x: f64, data_y: f64) -> (f64, f64)` to convert data-space coordinates to pixel coordinates without writing manual coordinate transform math
+- [x] **COORD-01**: User can call `axes.map_point(data_x: f64, data_y: f64) -> (f64, f64)` to convert data-space coordinates to pixel coordinates without writing manual coordinate transform math
 
 ### API — API Consistency
 
@@ -54,7 +54,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 |-------------|-------|--------|
 | ERGO-01 | Phase 11 | Complete |
 | ERGO-02 | Phase 11 | Complete |
-| COORD-01 | Phase 12 | Pending |
+| COORD-01 | Phase 12 | Complete |
 | API-01 | Phase 10 | Complete |
 
 **Coverage:**
