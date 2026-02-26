@@ -14,6 +14,26 @@
 
 use crate::dataviz::camera::Point3D;
 
+/// Controls how the surface is rendered: wireframe edges only, solid shaded faces,
+/// or shaded faces with wireframe overlay.
+///
+/// Default: `Shaded` — viridis colormap applied when no mode is explicitly set.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum RenderMode {
+    /// Flat-shaded faces colored by z-height using the viridis colormap.
+    Shaded,
+    /// Wireframe edges only; charcoal colored, front-facing edges only.
+    Wireframe,
+    /// Shaded faces with thin wireframe overlay on top.
+    ShadedWireframe,
+}
+
+impl Default for RenderMode {
+    fn default() -> Self {
+        RenderMode::Shaded
+    }
+}
+
 /// A regular-grid 3D surface, stored as normalized world-space vertices.
 ///
 /// Construct from flat row-major coordinate arrays. Retrieve normalized vertices
@@ -36,6 +56,19 @@ pub struct SurfacePlot {
     /// Normalized world-space vertices in row-major order.
     /// Index: row * cols + col
     world_vertices: Vec<Point3D>,
+    // Data-space extents captured before normalization (needed for tick label computation).
+    x_data_min: f64,
+    x_data_max: f64,
+    y_data_min: f64,
+    y_data_max: f64,
+    z_data_min: f64,
+    z_data_max: f64,
+    // Rendering configuration (Phase 6)
+    render_mode: RenderMode,
+    x_label: String,
+    y_label: String,
+    z_label: String,
+    show_base_grid: bool,
 }
 
 impl SurfacePlot {
@@ -65,8 +98,26 @@ impl SurfacePlot {
             zs.len(), rows, cols, n
         );
 
+        let (x_data_min, x_data_max) = min_max(&xs);
+        let (y_data_min, y_data_max) = min_max(&ys);
+        let (z_data_min, z_data_max) = min_max(&zs);
         let world_vertices = normalize_to_world_space(&xs, &ys, &zs);
-        SurfacePlot { rows, cols, world_vertices }
+        SurfacePlot {
+            rows,
+            cols,
+            world_vertices,
+            x_data_min,
+            x_data_max,
+            y_data_min,
+            y_data_max,
+            z_data_min,
+            z_data_max,
+            render_mode: RenderMode::default(),
+            x_label: "X".to_string(),
+            y_label: "Y".to_string(),
+            z_label: "Z".to_string(),
+            show_base_grid: false,
+        }
     }
 
     /// Returns the normalized world-space point at grid position (row, col).
@@ -85,6 +136,73 @@ impl SurfacePlot {
     /// Number of columns in the grid.
     pub fn cols(&self) -> usize {
         self.cols
+    }
+
+    /// Set the render mode (Shaded, Wireframe, or ShadedWireframe). Default: Shaded.
+    pub fn render_mode(mut self, mode: RenderMode) -> Self {
+        self.render_mode = mode;
+        self
+    }
+
+    /// Set the X axis label. Default: "X".
+    pub fn x_label(mut self, label: impl Into<String>) -> Self {
+        self.x_label = label.into();
+        self
+    }
+
+    /// Set the Y axis label. Default: "Y".
+    pub fn y_label(mut self, label: impl Into<String>) -> Self {
+        self.y_label = label.into();
+        self
+    }
+
+    /// Set the Z axis label. Default: "Z".
+    pub fn z_label(mut self, label: impl Into<String>) -> Self {
+        self.z_label = label.into();
+        self
+    }
+
+    /// Show or hide the base plane grid. Default: false (hidden).
+    pub fn show_base_grid(mut self, show: bool) -> Self {
+        self.show_base_grid = show;
+        self
+    }
+
+    /// Returns the data-space extents as (x_min, x_max, y_min, y_max, z_min, z_max).
+    pub fn data_extents(&self) -> (f64, f64, f64, f64, f64, f64) {
+        (
+            self.x_data_min,
+            self.x_data_max,
+            self.y_data_min,
+            self.y_data_max,
+            self.z_data_min,
+            self.z_data_max,
+        )
+    }
+
+    /// Returns the configured render mode.
+    pub fn render_mode_value(&self) -> RenderMode {
+        self.render_mode
+    }
+
+    /// Returns the X axis label.
+    pub fn x_label_value(&self) -> &str {
+        &self.x_label
+    }
+
+    /// Returns the Y axis label.
+    pub fn y_label_value(&self) -> &str {
+        &self.y_label
+    }
+
+    /// Returns the Z axis label.
+    pub fn z_label_value(&self) -> &str {
+        &self.z_label
+    }
+
+    /// Returns whether to show the base plane grid.
+    pub fn show_base_grid_value(&self) -> bool {
+        self.show_base_grid
     }
 }
 
@@ -210,5 +328,43 @@ mod tests {
         let plot = SurfacePlot::new(vec![0.0; 6], vec![0.0; 6], vec![0.0; 6], 2, 3);
         assert_eq!(plot.rows(), 2);
         assert_eq!(plot.cols(), 3);
+    }
+
+    #[test]
+    fn render_mode_default_is_shaded() {
+        let plot = SurfacePlot::new(vec![0.0, 1.0], vec![0.0, 0.0], vec![0.0, 1.0], 1, 2);
+        assert_eq!(plot.render_mode_value(), RenderMode::Shaded);
+    }
+
+    #[test]
+    fn builder_sets_render_mode() {
+        let plot = SurfacePlot::new(vec![0.0, 1.0], vec![0.0, 0.0], vec![0.0, 1.0], 1, 2)
+            .render_mode(RenderMode::Wireframe);
+        assert_eq!(plot.render_mode_value(), RenderMode::Wireframe);
+    }
+
+    #[test]
+    fn builder_sets_x_label() {
+        let plot = SurfacePlot::new(vec![0.0, 1.0], vec![0.0, 0.0], vec![0.0, 1.0], 1, 2)
+            .x_label("Time");
+        assert_eq!(plot.x_label_value(), "Time");
+    }
+
+    #[test]
+    fn show_base_grid_default_false() {
+        let plot = SurfacePlot::new(vec![0.0, 1.0], vec![0.0, 0.0], vec![0.0, 1.0], 1, 2);
+        assert!(!plot.show_base_grid_value());
+    }
+
+    #[test]
+    fn data_extents_captures_original_values() {
+        // xs = [0.0, 10.0] → after normalization these become [-1, 1], but extents preserve original
+        let xs = vec![0.0, 10.0];
+        let ys = vec![0.0, 0.0];
+        let zs = vec![0.0, 0.0];
+        let plot = SurfacePlot::new(xs, ys, zs, 1, 2);
+        let (x_min, x_max, _, _, _, _) = plot.data_extents();
+        assert!((x_min - 0.0).abs() < 1e-10, "x_min should be 0.0; got {}", x_min);
+        assert!((x_max - 10.0).abs() < 1e-10, "x_max should be 10.0; got {}", x_max);
     }
 }

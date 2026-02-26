@@ -12,4 +12,4 @@ pub use camera::{Camera, Point2D, Point3D, Vector3D};
 pub use confidence_band::ConfidenceBand;
 pub use data_curve::DataCurve;
 pub use spline_fit::SplineFit;
-pub use surface_plot::SurfacePlot;
+pub use surface_plot::{RenderMode, SurfacePlot};

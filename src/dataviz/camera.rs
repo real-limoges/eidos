@@ -163,6 +163,20 @@ impl Camera {
             + face_normal.z * self.eye.z;
         dot > 0.0
     }
+
+    /// Returns the camera eye position in world space as (x, y, z).
+    ///
+    /// Recomputes from spherical parameters (azimuth_deg, elevation_deg, distance).
+    /// Used by surface rendering for painter's algorithm depth sorting.
+    pub fn eye_position(&self) -> (f64, f64, f64) {
+        let el = self.elevation_deg.clamp(-89.9, 89.9).to_radians();
+        let az = self.azimuth_deg.to_radians();
+        (
+            self.distance * el.cos() * az.sin(),
+            self.distance * el.cos() * az.cos(),
+            self.distance * el.sin(),
+        )
+    }
 }
 
 #[cfg(test)]
@@ -232,5 +246,27 @@ mod tests {
         // and a point at z=0.5 should be above center
         let z0 = cam.project_to_screen(Point3D { x: 0.0, y: 0.0, z: 0.0 }, (800, 600));
         assert!(z0.is_some(), "origin should be visible from 45-deg elevation camera");
+    }
+
+    #[test]
+    fn eye_position_at_azimuth0_elevation0_is_on_y_axis() {
+        // Camera at azimuth=0°, elevation=0°, distance=3 → eye on +Y axis
+        // x = 3 * cos(0) * sin(0) = 0
+        // y = 3 * cos(0) * cos(0) = 3
+        // z = 3 * sin(0) = 0
+        let cam = Camera::new(0.0, 0.0, 3.0);
+        let (x, y, z) = cam.eye_position();
+        assert!(x.abs() < 1e-10, "x should be ~0.0; got {}", x);
+        assert!((y - 3.0).abs() < 1e-10, "y should be ~3.0; got {}", y);
+        assert!(z.abs() < 1e-10, "z should be ~0.0; got {}", z);
+    }
+
+    #[test]
+    fn eye_position_at_elevation45_has_positive_z() {
+        // Camera at azimuth=0°, elevation=45°, distance=3
+        // z = 3 * sin(45°) = 3 * 0.707 ≈ 2.12 > 0
+        let cam = Camera::new(0.0, 45.0, 3.0);
+        let (_, _, z) = cam.eye_position();
+        assert!(z > 0.0, "z should be positive at elevation=45°; got {}", z);
     }
 }
