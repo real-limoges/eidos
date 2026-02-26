@@ -622,8 +622,7 @@ impl SurfacePlot {
                         .line_to(s11.x, s11.y)
                         .line_to(s10.x, s10.y)
                         .close()
-                        .stroke(charcoal, WIRE_STROKE_WIDTH)
-                        .expect("stroke width 1.0 is valid");
+                        .stroke(charcoal, WIRE_STROKE_WIDTH);
                     prims.push(path.into());
                 }
                 RenderMode::ShadedWireframe => {
@@ -636,8 +635,7 @@ impl SurfacePlot {
                         .line_to(s10.x, s10.y)
                         .close()
                         .fill(face_color)
-                        .stroke(charcoal, SHADED_WIRE_STROKE_WIDTH)
-                        .expect("stroke width 0.5 is valid");
+                        .stroke(charcoal, SHADED_WIRE_STROKE_WIDTH);
                     prims.push(path.into());
                 }
             }
@@ -751,8 +749,7 @@ impl SurfacePlot {
                     let path = Bezier::new()
                         .move_to(s00.x, s00.y).line_to(s01.x, s01.y)
                         .line_to(s11.x, s11.y).line_to(s10.x, s10.y)
-                        .close().stroke(charcoal, WIRE_STROKE_WIDTH)
-                        .expect("stroke width 1.0 is valid");
+                        .close().stroke(charcoal, WIRE_STROKE_WIDTH);
                     prims.push(path.into());
                 }
                 RenderMode::ShadedWireframe => {
@@ -762,8 +759,7 @@ impl SurfacePlot {
                         .move_to(s00.x, s00.y).line_to(s01.x, s01.y)
                         .line_to(s11.x, s11.y).line_to(s10.x, s10.y)
                         .close().fill(face_color)
-                        .stroke(charcoal, SHADED_WIRE_STROKE_WIDTH)
-                        .expect("stroke width 0.5 is valid");
+                        .stroke(charcoal, SHADED_WIRE_STROKE_WIDTH);
                     prims.push(path.into());
                 }
             }
@@ -818,7 +814,6 @@ impl SurfacePlot {
                 prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
                     .stroke_color(axis_color)
                     .stroke_width(AXIS_STROKE_WIDTH)
-                    .expect("AXIS_STROKE_WIDTH is non-negative")
                     .into());
 
                 // Tick marks and labels
@@ -844,7 +839,6 @@ impl SurfacePlot {
                             sp.x + ndx * TICK_HALF_LEN, sp.y + ndy * TICK_HALF_LEN,
                         ).stroke_color(axis_color)
                          .stroke_width(TICK_STROKE_WIDTH)
-                         .expect("TICK_STROKE_WIDTH is non-negative")
                          .into());
 
                         let label = format_tick(tick_val, x_step);
@@ -853,7 +847,6 @@ impl SurfacePlot {
                             sp.y - ndx * LABEL_OFFSET,
                             &label,
                         ).font_size(TICK_LABEL_SIZE)
-                         .expect("TICK_LABEL_SIZE is positive")
                          .into());
                     }
                 }
@@ -863,7 +856,6 @@ impl SurfacePlot {
                 let label_pt_y = s1.y + (s1.y - s0.y).signum() * AXIS_LABEL_OFFSET;
                 prims.push(Text::new(label_pt_x, label_pt_y, &self.x_label)
                     .font_size(AXIS_LABEL_SIZE)
-                    .expect("AXIS_LABEL_SIZE is positive")
                     .into());
             }
         }
@@ -880,7 +872,6 @@ impl SurfacePlot {
                 prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
                     .stroke_color(axis_color)
                     .stroke_width(AXIS_STROKE_WIDTH)
-                    .expect("AXIS_STROKE_WIDTH is non-negative")
                     .into());
 
                 let y_ticks = generate_ticks(y_data_min, y_data_max, N_TICKS);
@@ -903,7 +894,6 @@ impl SurfacePlot {
                             sp.x + ndx * TICK_HALF_LEN, sp.y + ndy * TICK_HALF_LEN,
                         ).stroke_color(axis_color)
                          .stroke_width(TICK_STROKE_WIDTH)
-                         .expect("TICK_STROKE_WIDTH is non-negative")
                          .into());
 
                         let label = format_tick(tick_val, y_step);
@@ -912,7 +902,6 @@ impl SurfacePlot {
                             sp.y - ndx * LABEL_OFFSET,
                             &label,
                         ).font_size(TICK_LABEL_SIZE)
-                         .expect("TICK_LABEL_SIZE is positive")
                          .into());
                     }
                 }
@@ -921,7 +910,6 @@ impl SurfacePlot {
                 let label_pt_y = s1.y + (s1.y - s0.y).signum() * AXIS_LABEL_OFFSET;
                 prims.push(Text::new(label_pt_x, label_pt_y, &self.y_label)
                     .font_size(AXIS_LABEL_SIZE)
-                    .expect("AXIS_LABEL_SIZE is positive")
                     .into());
             }
         }
@@ -938,7 +926,6 @@ impl SurfacePlot {
                 prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
                     .stroke_color(axis_color)
                     .stroke_width(AXIS_STROKE_WIDTH)
-                    .expect("AXIS_STROKE_WIDTH is non-negative")
                     .into());
 
                 let z_ticks = generate_ticks(z_data_min, z_data_max, N_TICKS);
@@ -958,13 +945,11 @@ impl SurfacePlot {
                             sp.x + TICK_HALF_LEN, sp.y,
                         ).stroke_color(axis_color)
                          .stroke_width(TICK_STROKE_WIDTH)
-                         .expect("TICK_STROKE_WIDTH is non-negative")
                          .into());
 
                         let label = format_tick(tick_val, z_step);
                         prims.push(Text::new(sp.x - LABEL_OFFSET, sp.y, &label)
                             .font_size(TICK_LABEL_SIZE)
-                            .expect("TICK_LABEL_SIZE is positive")
                             .into());
                     }
                 }
@@ -972,7 +957,6 @@ impl SurfacePlot {
                 // Z axis label at top
                 prims.push(Text::new(s1.x - AXIS_LABEL_OFFSET, s1.y - AXIS_LABEL_OFFSET, &self.z_label)
                     .font_size(AXIS_LABEL_SIZE)
-                    .expect("AXIS_LABEL_SIZE is positive")
                     .into());
             }
         }

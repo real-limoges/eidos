@@ -191,15 +191,13 @@ impl Axes {
         // X axis line (horizontal, at bottom)
         let x_line = Line::new(self.x, x_axis_y, self.x + self.width, x_axis_y)
             .stroke_color(Color::WHITE)
-            .stroke_width(AXIS_STROKE_WIDTH)
-            .expect("valid stroke width");
+            .stroke_width(AXIS_STROKE_WIDTH);
         prims.push(x_line.into());
 
         // Y axis line (vertical, at left)
         let y_line = Line::new(y_axis_x, self.y, y_axis_x, self.y + self.height)
             .stroke_color(Color::WHITE)
-            .stroke_width(AXIS_STROKE_WIDTH)
-            .expect("valid stroke width");
+            .stroke_width(AXIS_STROKE_WIDTH);
         prims.push(y_line.into());
 
         // --- Step 4: X-axis ticks, labels, and grid lines ---
@@ -209,15 +207,13 @@ impl Axes {
             // Tick mark (below x axis)
             let tick = Line::new(px, x_axis_y, px, x_axis_y + TICK_LENGTH)
                 .stroke_color(Color::WHITE)
-                .stroke_width(TICK_STROKE_WIDTH)
-                .expect("valid stroke width");
+                .stroke_width(TICK_STROKE_WIDTH);
             prims.push(tick.into());
 
             // Tick label (below tick)
             let label = format_tick(tick_val, x_step);
             let label_text = Text::new(px, x_axis_y + TICK_LENGTH + TICK_LABEL_OFFSET, label)
-                .font_size(TICK_LABEL_SIZE)
-                .expect("valid font size");
+                .font_size(TICK_LABEL_SIZE);
             prims.push(label_text.into());
 
             // Grid line (vertical, from x axis up to top of plot)
@@ -226,9 +222,7 @@ impl Axes {
                 .move_to(px, self.y)
                 .line_to(px, self.y + self.height)
                 .stroke(Color::rgb(180, 180, 180), GRID_STROKE_WIDTH)
-                .expect("valid grid stroke")
-                .opacity(GRID_OPACITY)
-                .expect("valid opacity");
+                .opacity(GRID_OPACITY);
             prims.push(grid_path.into());
         }
 
@@ -240,8 +234,7 @@ impl Axes {
             // Tick mark (left of y axis)
             let tick = Line::new(y_axis_x - TICK_LENGTH, py, y_axis_x, py)
                 .stroke_color(Color::WHITE)
-                .stroke_width(TICK_STROKE_WIDTH)
-                .expect("valid stroke width");
+                .stroke_width(TICK_STROKE_WIDTH);
             prims.push(tick.into());
 
             // Tick label (left of tick, right-aligned)
@@ -252,8 +245,7 @@ impl Axes {
                 py + TICK_LABEL_SIZE * 0.35,
                 label,
             )
-            .font_size(TICK_LABEL_SIZE)
-            .expect("valid font size");
+            .font_size(TICK_LABEL_SIZE);
             prims.push(label_text.into());
 
             // Grid line (horizontal, from y axis to right edge of plot)
@@ -261,9 +253,7 @@ impl Axes {
                 .move_to(self.x, py)
                 .line_to(self.x + self.width, py)
                 .stroke(Color::rgb(180, 180, 180), GRID_STROKE_WIDTH)
-                .expect("valid grid stroke")
-                .opacity(GRID_OPACITY)
-                .expect("valid opacity");
+                .opacity(GRID_OPACITY);
             prims.push(grid_path.into());
         }
 
@@ -275,7 +265,6 @@ impl Axes {
             prims.push(
                 Text::new(title_x, title_y, title.clone())
                     .font_size(AXIS_TITLE_SIZE)
-                    .expect("valid font size")
                     .into(),
             );
         }
@@ -288,7 +277,6 @@ impl Axes {
             prims.push(
                 Text::new(title_x, title_y, title.clone())
                     .font_size(AXIS_TITLE_SIZE)
-                    .expect("valid font size")
                     .into(),
             );
         }

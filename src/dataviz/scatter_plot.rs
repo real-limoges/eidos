@@ -225,8 +225,7 @@ impl ScatterPlot {
 
                 let circle = Circle::new(screen.x, screen.y, self.radius)
                     .fill(self.color)
-                    .opacity(final_alpha)
-                    .expect("clamped opacity is always in [0.0, 1.0]");
+                    .opacity(final_alpha);
 
                 (depth_sq, Primitive::Circle(circle))
             })

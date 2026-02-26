@@ -46,15 +46,10 @@ impl ConfidenceBand {
         self
     }
 
-    /// Set opacity in [0.0, 1.0]. Returns Err if outside range.
-    pub fn opacity(mut self, value: f64) -> Result<Self, EidosError> {
-        if !(0.0..=1.0).contains(&value) {
-            return Err(EidosError::InvalidConfig(
-                "opacity must be in range [0.0, 1.0]".into(),
-            ));
-        }
-        self.opacity = value;
-        Ok(self)
+    /// Set opacity in [0.0, 1.0]. Values outside the range are clamped.
+    pub fn opacity(mut self, value: f64) -> Self {
+        self.opacity = value.clamp(0.0, 1.0);
+        self
     }
 
     /// Convert pre-mapped visual-space upper and lower points to a closed filled Bezier path.
@@ -109,7 +104,6 @@ impl ConfidenceBand {
         // Fill-only: no stroke on the band boundary lines
         bez.fill(self.fill_color)
            .opacity(self.opacity)
-           .expect("opacity validated at construction or via opacity() builder")
     }
 }
 
@@ -151,15 +145,15 @@ mod tests {
     }
 
     #[test]
-    fn confidence_band_opacity_out_of_range_returns_err() {
+    fn confidence_band_opacity_is_clamped() {
         let upper = vec![(0.0, 1.0), (1.0, 1.0)];
         let lower = vec![(0.0, 0.0), (1.0, 0.0)];
         let band = ConfidenceBand::new(upper, lower).unwrap();
-        assert!(band.opacity(1.5).is_err());
+        assert_eq!(band.opacity(1.5).opacity, 1.0);
         let upper = vec![(0.0, 1.0), (1.0, 1.0)];
         let lower = vec![(0.0, 0.0), (1.0, 0.0)];
         let band2 = ConfidenceBand::new(upper, lower).unwrap();
-        assert!(band2.opacity(-0.1).is_err());
+        assert_eq!(band2.opacity(-0.1).opacity, 0.0);
     }
 
     #[test]

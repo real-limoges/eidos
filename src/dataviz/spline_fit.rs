@@ -73,15 +73,10 @@ impl SplineFit {
         self
     }
 
-    /// Set stroke width. Returns Err if negative.
-    pub fn stroke_width(mut self, width: f64) -> Result<Self, EidosError> {
-        if width < 0.0 {
-            return Err(EidosError::InvalidConfig(
-                "stroke width must be non-negative".into(),
-            ));
-        }
-        self.stroke_width = width;
-        Ok(self)
+    /// Set stroke width. Negative values are clamped to 0.0.
+    pub fn stroke_width(mut self, width: f64) -> Self {
+        self.stroke_width = width.max(0.0);
+        self
     }
 
     /// Configure the left-to-right reveal animation.
@@ -160,8 +155,7 @@ impl SplineFit {
         }
 
         Some(
-            bez.stroke(self.stroke_color, self.stroke_width)
-               .expect("stroke validated at construction"),
+            bez.stroke(self.stroke_color, self.stroke_width),
         )
     }
 }

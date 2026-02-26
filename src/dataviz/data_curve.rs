@@ -35,27 +35,17 @@ impl DataCurve {
         })
     }
 
-    /// Set stroke color and width. Returns Err if width is negative.
-    pub fn stroke(mut self, color: Color, width: f64) -> Result<Self, EidosError> {
-        if width < 0.0 {
-            return Err(EidosError::InvalidConfig(
-                "stroke width must be non-negative".into(),
-            ));
-        }
+    /// Set stroke color and width. Negative widths are clamped to 0.0.
+    pub fn stroke(mut self, color: Color, width: f64) -> Self {
         self.stroke_color = color;
-        self.stroke_width = width;
-        Ok(self)
+        self.stroke_width = width.max(0.0);
+        self
     }
 
-    /// Set opacity in [0.0, 1.0]. Returns Err if outside range.
-    pub fn opacity(mut self, value: f64) -> Result<Self, EidosError> {
-        if !(0.0..=1.0).contains(&value) {
-            return Err(EidosError::InvalidConfig(
-                "opacity must be in range [0.0, 1.0]".into(),
-            ));
-        }
-        self.opacity = value;
-        Ok(self)
+    /// Set opacity in [0.0, 1.0]. Values outside the range are clamped.
+    pub fn opacity(mut self, value: f64) -> Self {
+        self.opacity = value.clamp(0.0, 1.0);
+        self
     }
 
     /// Convert pre-mapped visual-space points to a Bezier path using Catmull-Rom spline.
@@ -86,12 +76,9 @@ impl DataCurve {
             bez = bez.cubic_to(cp1.0, cp1.1, cp2.0, cp2.1, end.0, end.1);
         }
 
-        // Apply stroke and opacity -- these are infallible because we already validated them
-        // in DataCurve::stroke() and DataCurve::opacity(); use defaults here.
+        // Apply stroke and opacity — builders are infallible (clamping semantics).
         bez.stroke(self.stroke_color, self.stroke_width)
-           .expect("stroke validated at construction")
            .opacity(self.opacity)
-           .expect("opacity validated at construction")
     }
 }
 
@@ -113,15 +100,17 @@ mod tests {
     }
 
     #[test]
-    fn data_curve_negative_stroke_width_returns_err() {
+    fn data_curve_negative_stroke_width_is_clamped() {
         let c = DataCurve::new(vec![(0.0, 0.0), (1.0, 1.0)]).unwrap();
-        assert!(c.stroke(Color::WHITE, -1.0).is_err());
+        assert_eq!(c.stroke(Color::WHITE, -1.0).stroke_width, 0.0);
     }
 
     #[test]
-    fn data_curve_opacity_out_of_range_returns_err() {
+    fn data_curve_opacity_out_of_range_is_clamped() {
         let c = DataCurve::new(vec![(0.0, 0.0), (1.0, 1.0)]).unwrap();
-        assert!(c.opacity(1.5).is_err());
+        assert_eq!(c.opacity(1.5).opacity, 1.0);
+        let c2 = DataCurve::new(vec![(0.0, 0.0), (1.0, 1.0)]).unwrap();
+        assert_eq!(c2.opacity(-0.5).opacity, 0.0);
     }
 
     #[test]
