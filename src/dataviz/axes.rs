@@ -411,8 +411,10 @@ fn nice_num(x: f64, round: bool) -> f64 {
 
 /// Compute decimal precision from the tick step size.
 /// step=1.0 → 0 decimals; step=0.1 → 1 decimal; step=0.01 → 2 decimals.
+/// Degenerate step (≤ 0): returns 0 (integer display) as a safe fallback.
 pub(crate) fn tick_precision(step: f64) -> usize {
-    if step >= 1.0 { 0 } else { (-step.log10().floor()) as usize }
+    if step <= 0.0 { return 0; }
+    if step >= 1.0 { 0 } else { (-step.log10().floor()).clamp(0.0, 15.0) as usize }
 }
 
 /// Format a tick value with appropriate decimal precision to avoid floating-point noise.

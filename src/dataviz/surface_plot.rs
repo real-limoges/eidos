@@ -16,7 +16,8 @@
 use crate::dataviz::camera::Point3D;
 use crate::dataviz::camera::Camera;
 use crate::dataviz::colormap::viridis_color;
-use crate::primitives::{Primitive, Bezier};
+use crate::dataviz::axes::{generate_ticks, format_tick};
+use crate::primitives::{Primitive, Bezier, Line, Text};
 use crate::Color;
 
 /// Controls how the surface is rendered: wireframe edges only, solid shaded faces,
@@ -351,7 +352,235 @@ impl SurfacePlot {
             }
         }
 
+        // Append 3D axis lines, tick marks, and labels on top of surface faces
+        let mut axis_prims = self.draw_axes(camera, viewport);
+        prims.append(&mut axis_prims);
+
         prims
+    }
+
+    /// Render 3D axis lines, tick marks, and labels as primitives.
+    ///
+    /// Draws 3 axis lines from the camera-facing floor corner:
+    /// - X axis: along the floor, varying x from far corner to opposite x
+    /// - Y axis: along the floor, varying y from far corner to opposite y
+    /// - Z axis: vertical from the far floor corner up to z=+1
+    ///
+    /// Tick labels use data-space values (from SurfacePlot data extents).
+    fn draw_axes(&self, camera: &Camera, viewport: (u32, u32)) -> Vec<Primitive> {
+        const N_TICKS: usize = 5;
+        const TICK_HALF_LEN: f64 = 8.0;      // half-length of tick mark in screen pixels
+        const LABEL_OFFSET: f64 = 16.0;       // screen pixel offset for tick value label
+        const AXIS_LABEL_OFFSET: f64 = 28.0;  // screen pixel offset for axis name label
+        const AXIS_STROKE_WIDTH: f64 = 1.5;
+        const TICK_STROKE_WIDTH: f64 = 1.0;
+        const TICK_LABEL_SIZE: f64 = 10.0;
+        const AXIS_LABEL_SIZE: f64 = 12.0;
+        let axis_color = Color::rgb(80, 80, 80);
+
+        let mut prims: Vec<Primitive> = Vec::new();
+
+        let (fx, fy) = far_floor_corner(camera.azimuth_deg);
+        let fz = -1.0_f64;
+        let top_z = 1.0_f64;
+
+        // Opposite ends for X and Y axes
+        let x_end_x = -fx;
+        let y_end_y = -fy;
+
+        let (x_data_min, x_data_max, y_data_min, y_data_max, z_data_min, z_data_max) = self.data_extents();
+
+        // --- X AXIS ---
+        {
+            let start = crate::dataviz::camera::Point3D { x: fx, y: fy, z: fz };
+            let end   = crate::dataviz::camera::Point3D { x: x_end_x, y: fy, z: fz };
+
+            if let (Some(s0), Some(s1)) = (
+                camera.project_to_screen(start, viewport),
+                camera.project_to_screen(end, viewport),
+            ) {
+                // Draw axis line
+                prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
+                    .stroke_color(axis_color)
+                    .stroke_width(AXIS_STROKE_WIDTH)
+                    .expect("AXIS_STROKE_WIDTH is non-negative")
+                    .into());
+
+                // Tick marks and labels
+                let x_ticks = generate_ticks(x_data_min, x_data_max, N_TICKS);
+                let x_step = if x_ticks.len() >= 2 { x_ticks[1] - x_ticks[0] } else { 1.0 };
+                for &tick_val in &x_ticks {
+                    let t = if (x_data_max - x_data_min).abs() < 1e-12 {
+                        0.0
+                    } else {
+                        (tick_val - x_data_min) / (x_data_max - x_data_min) * 2.0 - 1.0
+                    };
+                    // Interpolate tick world position along axis
+                    let wx = fx + (x_end_x - fx) * (t + 1.0) / 2.0;
+                    let world_tick = crate::dataviz::camera::Point3D { x: wx, y: fy, z: fz };
+                    if let Some(sp) = camera.project_to_screen(world_tick, viewport) {
+                        // Perpendicular direction to axis in screen space
+                        let perp_dx = -(s1.y - s0.y);
+                        let perp_dy = s1.x - s0.x;
+                        let len = (perp_dx * perp_dx + perp_dy * perp_dy).sqrt().max(1e-9);
+                        let (ndx, ndy) = (perp_dx / len, perp_dy / len);
+                        prims.push(Line::new(
+                            sp.x - ndx * TICK_HALF_LEN, sp.y - ndy * TICK_HALF_LEN,
+                            sp.x + ndx * TICK_HALF_LEN, sp.y + ndy * TICK_HALF_LEN,
+                        ).stroke_color(axis_color)
+                         .stroke_width(TICK_STROKE_WIDTH)
+                         .expect("TICK_STROKE_WIDTH is non-negative")
+                         .into());
+
+                        let label = format_tick(tick_val, x_step);
+                        prims.push(Text::new(
+                            sp.x + ndy * LABEL_OFFSET,
+                            sp.y - ndx * LABEL_OFFSET,
+                            &label,
+                        ).font_size(TICK_LABEL_SIZE)
+                         .expect("TICK_LABEL_SIZE is positive")
+                         .into());
+                    }
+                }
+
+                // Axis name label at the end of the axis
+                let label_pt_x = s1.x + (s1.x - s0.x).signum() * AXIS_LABEL_OFFSET;
+                let label_pt_y = s1.y + (s1.y - s0.y).signum() * AXIS_LABEL_OFFSET;
+                prims.push(Text::new(label_pt_x, label_pt_y, &self.x_label)
+                    .font_size(AXIS_LABEL_SIZE)
+                    .expect("AXIS_LABEL_SIZE is positive")
+                    .into());
+            }
+        }
+
+        // --- Y AXIS ---
+        {
+            let start = crate::dataviz::camera::Point3D { x: fx, y: fy, z: fz };
+            let end   = crate::dataviz::camera::Point3D { x: fx, y: y_end_y, z: fz };
+
+            if let (Some(s0), Some(s1)) = (
+                camera.project_to_screen(start, viewport),
+                camera.project_to_screen(end, viewport),
+            ) {
+                prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
+                    .stroke_color(axis_color)
+                    .stroke_width(AXIS_STROKE_WIDTH)
+                    .expect("AXIS_STROKE_WIDTH is non-negative")
+                    .into());
+
+                let y_ticks = generate_ticks(y_data_min, y_data_max, N_TICKS);
+                let y_step = if y_ticks.len() >= 2 { y_ticks[1] - y_ticks[0] } else { 1.0 };
+                for &tick_val in &y_ticks {
+                    let t = if (y_data_max - y_data_min).abs() < 1e-12 {
+                        0.0
+                    } else {
+                        (tick_val - y_data_min) / (y_data_max - y_data_min) * 2.0 - 1.0
+                    };
+                    let wy = fy + (y_end_y - fy) * (t + 1.0) / 2.0;
+                    let world_tick = crate::dataviz::camera::Point3D { x: fx, y: wy, z: fz };
+                    if let Some(sp) = camera.project_to_screen(world_tick, viewport) {
+                        let perp_dx = -(s1.y - s0.y);
+                        let perp_dy = s1.x - s0.x;
+                        let len = (perp_dx * perp_dx + perp_dy * perp_dy).sqrt().max(1e-9);
+                        let (ndx, ndy) = (perp_dx / len, perp_dy / len);
+                        prims.push(Line::new(
+                            sp.x - ndx * TICK_HALF_LEN, sp.y - ndy * TICK_HALF_LEN,
+                            sp.x + ndx * TICK_HALF_LEN, sp.y + ndy * TICK_HALF_LEN,
+                        ).stroke_color(axis_color)
+                         .stroke_width(TICK_STROKE_WIDTH)
+                         .expect("TICK_STROKE_WIDTH is non-negative")
+                         .into());
+
+                        let label = format_tick(tick_val, y_step);
+                        prims.push(Text::new(
+                            sp.x + ndy * LABEL_OFFSET,
+                            sp.y - ndx * LABEL_OFFSET,
+                            &label,
+                        ).font_size(TICK_LABEL_SIZE)
+                         .expect("TICK_LABEL_SIZE is positive")
+                         .into());
+                    }
+                }
+
+                let label_pt_x = s1.x + (s1.x - s0.x).signum() * AXIS_LABEL_OFFSET;
+                let label_pt_y = s1.y + (s1.y - s0.y).signum() * AXIS_LABEL_OFFSET;
+                prims.push(Text::new(label_pt_x, label_pt_y, &self.y_label)
+                    .font_size(AXIS_LABEL_SIZE)
+                    .expect("AXIS_LABEL_SIZE is positive")
+                    .into());
+            }
+        }
+
+        // --- Z AXIS (vertical) ---
+        {
+            let start = crate::dataviz::camera::Point3D { x: fx, y: fy, z: fz };
+            let end   = crate::dataviz::camera::Point3D { x: fx, y: fy, z: top_z };
+
+            if let (Some(s0), Some(s1)) = (
+                camera.project_to_screen(start, viewport),
+                camera.project_to_screen(end, viewport),
+            ) {
+                prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
+                    .stroke_color(axis_color)
+                    .stroke_width(AXIS_STROKE_WIDTH)
+                    .expect("AXIS_STROKE_WIDTH is non-negative")
+                    .into());
+
+                let z_ticks = generate_ticks(z_data_min, z_data_max, N_TICKS);
+                let z_step = if z_ticks.len() >= 2 { z_ticks[1] - z_ticks[0] } else { 1.0 };
+                for &tick_val in &z_ticks {
+                    let t = if (z_data_max - z_data_min).abs() < 1e-12 {
+                        0.0
+                    } else {
+                        (tick_val - z_data_min) / (z_data_max - z_data_min) * 2.0 - 1.0
+                    };
+                    let wz = fz + (top_z - fz) * (t + 1.0) / 2.0;
+                    let world_tick = crate::dataviz::camera::Point3D { x: fx, y: fy, z: wz };
+                    if let Some(sp) = camera.project_to_screen(world_tick, viewport) {
+                        // Z axis tick: horizontal tick mark
+                        prims.push(Line::new(
+                            sp.x - TICK_HALF_LEN, sp.y,
+                            sp.x + TICK_HALF_LEN, sp.y,
+                        ).stroke_color(axis_color)
+                         .stroke_width(TICK_STROKE_WIDTH)
+                         .expect("TICK_STROKE_WIDTH is non-negative")
+                         .into());
+
+                        let label = format_tick(tick_val, z_step);
+                        prims.push(Text::new(sp.x - LABEL_OFFSET, sp.y, &label)
+                            .font_size(TICK_LABEL_SIZE)
+                            .expect("TICK_LABEL_SIZE is positive")
+                            .into());
+                    }
+                }
+
+                // Z axis label at top
+                prims.push(Text::new(s1.x - AXIS_LABEL_OFFSET, s1.y - AXIS_LABEL_OFFSET, &self.z_label)
+                    .font_size(AXIS_LABEL_SIZE)
+                    .expect("AXIS_LABEL_SIZE is positive")
+                    .into());
+            }
+        }
+
+        prims
+    }
+}
+
+/// Select the bounding-box floor corner farthest from the camera based on azimuth quadrant.
+///
+/// In normalized world space, the floor is at z = -1. The 4 floor corners are
+/// combinations of x,y ∈ {-1.0, +1.0}. The "far" corner is the one most visible
+/// from the current camera azimuth — matching the matplotlib/MATLAB convention.
+///
+/// Azimuth convention (from camera.rs): 0° = camera on +Y axis, increases clockwise.
+fn far_floor_corner(azimuth_deg: f64) -> (f64, f64) {
+    // Normalize to [0, 360)
+    let az = ((azimuth_deg % 360.0) + 360.0) % 360.0;
+    match az as u32 {
+        0..=89   => (-1.0, -1.0), // Q1: camera near +Y, +X → far corner is (-X, -Y)
+        90..=179 => ( 1.0, -1.0), // Q2: camera near +Y, -X → far corner is (+X, -Y)
+        180..=269 => ( 1.0,  1.0), // Q3: camera near -Y, -X → far corner is (+X, +Y)
+        _        => (-1.0,  1.0), // Q4: camera near -Y, +X → far corner is (-X, +Y)
     }
 }
 
@@ -563,25 +792,29 @@ mod tests {
         let camera = Camera::new(45.0, 30.0, 3.0);
         let result = plot.to_primitives(&camera, (800, 600));
         assert!(!result.is_empty(), "wireframe 2x2 plot should produce at least one primitive");
-        // All produced primitives should be Bezier paths
-        for prim in &result {
-            match prim {
-                Primitive::Bezier(_) => {}
-                other => panic!("expected Bezier primitive, got {:?}", other),
-            }
-        }
+        // Face primitives should be Bezier paths; axes add Line and Text on top — verify at least
+        // one Bezier exists (the wireframe face)
+        let bezier_count = result.iter().filter(|p| matches!(p, Primitive::Bezier(_))).count();
+        assert!(bezier_count >= 1, "wireframe mode should produce at least one Bezier face primitive");
     }
 
     #[test]
     fn to_primitives_2x2_produces_one_face() {
         // A 2x2 grid has exactly 1 face (1×1 quads).
         // Camera nearly directly above (elevation=89°) should see the single face.
+        // Since axes are now appended in to_primitives(), total count > 1 — verify at least 1 Bezier.
         let plot = make_2x2_plot();
         let camera = Camera::new(0.0, 89.0, 3.0);
         let result = plot.to_primitives(&camera, (800, 600));
+        let bezier_count = result.iter().filter(|p| matches!(p, Primitive::Bezier(_))).count();
         assert_eq!(
-            result.len(), 1,
-            "2x2 grid should produce exactly 1 primitive from top-facing camera; got {}",
+            bezier_count, 1,
+            "2x2 grid should produce exactly 1 Bezier face primitive from top-facing camera; got {}",
+            bezier_count
+        );
+        assert!(
+            result.len() > 1,
+            "total output (face + axes) should be more than 1 primitive; got {}",
             result.len()
         );
     }
@@ -620,5 +853,81 @@ mod tests {
             !result.is_empty(),
             "30x30 grid should produce at least some primitives from above"
         );
+    }
+
+    // --- far_floor_corner() quadrant tests ---
+
+    #[test]
+    fn far_floor_corner_quadrant_0_90() {
+        let (x, y) = far_floor_corner(45.0);
+        assert!((x - (-1.0)).abs() < 1e-10, "Q1 x should be -1.0; got {}", x);
+        assert!((y - (-1.0)).abs() < 1e-10, "Q1 y should be -1.0; got {}", y);
+    }
+
+    #[test]
+    fn far_floor_corner_quadrant_90_180() {
+        let (x, y) = far_floor_corner(135.0);
+        assert!((x - 1.0).abs() < 1e-10, "Q2 x should be +1.0; got {}", x);
+        assert!((y - (-1.0)).abs() < 1e-10, "Q2 y should be -1.0; got {}", y);
+    }
+
+    #[test]
+    fn far_floor_corner_quadrant_180_270() {
+        let (x, y) = far_floor_corner(225.0);
+        assert!((x - 1.0).abs() < 1e-10, "Q3 x should be +1.0; got {}", x);
+        assert!((y - 1.0).abs() < 1e-10, "Q3 y should be +1.0; got {}", y);
+    }
+
+    #[test]
+    fn far_floor_corner_quadrant_270_360() {
+        let (x, y) = far_floor_corner(315.0);
+        assert!((x - (-1.0)).abs() < 1e-10, "Q4 x should be -1.0; got {}", x);
+        assert!((y - 1.0).abs() < 1e-10, "Q4 y should be +1.0; got {}", y);
+    }
+
+    #[test]
+    fn far_floor_corner_wraps_at_360() {
+        let at_0 = far_floor_corner(0.0);
+        let at_360 = far_floor_corner(360.0);
+        assert_eq!(at_0, at_360, "far_floor_corner(360) should equal far_floor_corner(0)");
+    }
+
+    #[test]
+    fn to_primitives_includes_axis_lines() {
+        // 2x2 grid with data range [0,10] on all axes — axes add Line + Text primitives
+        let plot = SurfacePlot::new(
+            vec![0.0, 10.0, 0.0, 10.0],
+            vec![0.0, 0.0, 10.0, 10.0],
+            vec![0.0, 0.0, 0.0, 0.0], // flat z=0
+            2, 2,
+        );
+        let camera = Camera::new(45.0, 30.0, 3.0);
+        let viewport = (800u32, 600u32);
+
+        // Get count with axes (default to_primitives)
+        let total = plot.to_primitives(&camera, viewport);
+
+        // Count face-only primitives by temporarily using a 1x1 face plot and verifying axes add more
+        // The 2x2 grid has 1 visible face, which produces 1 Bezier. Axes add Line + Text on top.
+        assert!(
+            total.len() > 1,
+            "to_primitives should produce more than 1 primitive (face + axes); got {}",
+            total.len()
+        );
+        // Verify that non-Bezier primitives exist (axis lines and tick labels)
+        let non_bezier_count = total.iter().filter(|p| !matches!(p, Primitive::Bezier(_))).count();
+        assert!(
+            non_bezier_count > 0,
+            "axes should produce Line and Text primitives; got {} non-Bezier primitives",
+            non_bezier_count
+        );
+    }
+
+    #[test]
+    fn default_labels_are_xyz() {
+        let plot = SurfacePlot::new(vec![0.0, 1.0], vec![0.0, 0.0], vec![0.0, 1.0], 1, 2);
+        assert_eq!(plot.x_label_value(), "X", "default x label should be X");
+        assert_eq!(plot.y_label_value(), "Y", "default y label should be Y");
+        assert_eq!(plot.z_label_value(), "Z", "default z label should be Z");
     }
 }
