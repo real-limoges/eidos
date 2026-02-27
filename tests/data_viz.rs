@@ -28,11 +28,19 @@ fn data_curve_negative_stroke_width_is_clamped() {
 fn data_curve_to_bezier_path_produces_correct_command_count() {
     // n data points -> 1 MoveTo + (n-1) CubicTo = n commands
     let n = 10;
-    let pts: Vec<(f64, f64)> = (0..n).map(|i| (i as f64 * 10.0, (i as f64).sin() * 100.0)).collect();
+    let pts: Vec<(f64, f64)> = (0..n)
+        .map(|i| (i as f64 * 10.0, (i as f64).sin() * 100.0))
+        .collect();
     let curve = DataCurve::new(pts.clone()).unwrap();
     let visual: Vec<(f64, f64)> = pts.iter().map(|&(x, y)| (x + 100.0, 500.0 - y)).collect();
     let bez = curve.to_bezier_path(&visual);
-    assert_eq!(bez.commands.len(), n, "expected {} commands, got {}", n, bez.commands.len());
+    assert_eq!(
+        bez.commands.len(),
+        n,
+        "expected {} commands, got {}",
+        n,
+        bez.commands.len()
+    );
 }
 
 // ---- Axes structure tests (DATA-01) ----
@@ -44,7 +52,11 @@ fn axes_to_primitives_includes_axis_lines_and_ticks() {
     let axes = Axes::new(100.0, 100.0, 800.0, 500.0).add_curve(curve);
     let prims = axes.to_primitives();
     // Should have: 2 axis lines + ticks + labels + grid lines + 1 curve path = well over 10
-    assert!(prims.len() > 10, "expected >10 primitives, got {}", prims.len());
+    assert!(
+        prims.len() > 10,
+        "expected >10 primitives, got {}",
+        prims.len()
+    );
 }
 
 #[test]
@@ -91,7 +103,7 @@ fn axes_auto_range_degenerate_single_y_value_does_not_panic() {
 #[test]
 fn axes_auto_range_degenerate_single_point_does_not_panic() {
     // Only 2 points required by DataCurve; X degenerate too
-    let data = vec![(5.0, 5.0), (5.0, 5.0)];  // same point twice
+    let data = vec![(5.0, 5.0), (5.0, 5.0)]; // same point twice
     let curve = DataCurve::new(data).unwrap();
     let axes = Axes::new(0.0, 0.0, 800.0, 500.0).add_curve(curve);
     let prims = axes.to_primitives();
@@ -127,12 +139,18 @@ fn axes_multiple_curves_each_produce_bezier_path() {
     let one_curve_count = {
         let d = vec![(0.0, 0.0), (1.0, 1.0), (2.0, 0.0)];
         let c = DataCurve::new(d).unwrap();
-        Axes::new(0.0, 0.0, 800.0, 500.0).add_curve(c).to_primitives().len()
+        Axes::new(0.0, 0.0, 800.0, 500.0)
+            .add_curve(c)
+            .to_primitives()
+            .len()
     };
     let two_curve_count = axes.to_primitives().len();
-    assert!(two_curve_count > one_curve_count,
+    assert!(
+        two_curve_count > one_curve_count,
         "two curves should produce more primitives than one ({} vs {})",
-        two_curve_count, one_curve_count);
+        two_curve_count,
+        one_curve_count
+    );
 }
 
 // ---- E2E render test (CORE-01 + DATA-01 pipeline) ----
@@ -164,19 +182,26 @@ fn dataviz_render_produces_mp4() {
 
     let scene = Scene::new(1024, 640, 24).unwrap().duration(1.0);
 
-    scene.render_static(|s| {
-        s.add_axes(&axes);
-    }, output_path).expect("dataviz render should succeed");
+    scene
+        .render_static(
+            |s| {
+                s.add_axes(&axes);
+            },
+            output_path,
+        )
+        .expect("dataviz render should succeed");
 
     assert!(
         Path::new(output_path).exists(),
-        "MP4 file should exist at {}", output_path
+        "MP4 file should exist at {}",
+        output_path
     );
 
     let metadata = std::fs::metadata(output_path).unwrap();
     assert!(
         metadata.len() > 1024,
-        "MP4 should be at least 1KB, got {} bytes", metadata.len()
+        "MP4 should be at least 1KB, got {} bytes",
+        metadata.len()
     );
 
     let _ = std::fs::remove_file(output_path);

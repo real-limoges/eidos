@@ -3,10 +3,10 @@
 //! Produces depth-tagged [`Circle`] primitives suitable for merging into
 //! the painter's algorithm alongside [`SurfacePlot`] face primitives.
 
+use crate::Color;
 use crate::dataviz::camera::{Camera, Point3D};
 use crate::dataviz::surface_plot::normalize;
 use crate::primitives::{Circle, Primitive};
-use crate::Color;
 
 // ── Animation ────────────────────────────────────────────────────────────────
 

@@ -13,13 +13,13 @@
 //! Call [`SurfacePlot::to_primitives`] with a [`Camera`] to get SVG-ready primitives.
 //! Uses the painter's algorithm: backface cull, sort back-to-front, emit one quad per face.
 
+use crate::Color;
 use crate::animation::{Easing, Tween};
 use crate::dataviz::axes::{format_tick, generate_ticks};
 use crate::dataviz::camera::Camera;
 use crate::dataviz::camera::Point3D;
 use crate::dataviz::colormap::viridis_color;
 use crate::primitives::{Bezier, Line, Primitive, Text};
-use crate::Color;
 
 /// Internal record for one animate_fit time range.
 struct FitAnimation {
@@ -83,20 +83,15 @@ impl Clone for CameraAnimation {
 /// or shaded faces with wireframe overlay.
 ///
 /// Default: `Shaded` — viridis colormap applied when no mode is explicitly set.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
 pub enum RenderMode {
     /// Flat-shaded faces colored by z-height using the viridis colormap.
+    #[default]
     Shaded,
     /// Wireframe edges only; charcoal colored, front-facing edges only.
     Wireframe,
     /// Shaded faces with thin wireframe overlay on top.
     ShadedWireframe,
-}
-
-impl Default for RenderMode {
-    fn default() -> Self {
-        RenderMode::Shaded
-    }
 }
 
 /// A regular-grid 3D surface, stored as normalized world-space vertices.
@@ -1630,7 +1625,7 @@ mod tests {
         let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
             .animate_fit(0.0, 2.0, Easing::Linear) // ends at t=2.0
             .animate_fit(5.0, 2.0, Easing::Linear); // starts at t=5.0
-                                                    // At t=3.5 (between the two ranges): hold at fitted_z
+        // At t=3.5 (between the two ranges): hold at fitted_z
         let z = plot.z_at(1.0, 3.5);
         assert!(
             (z - 1.0).abs() < 1e-10,
@@ -1669,8 +1664,11 @@ mod tests {
         let camera = Camera::new(45.0, 30.0, 3.0);
         let static_result = plot.to_primitives(&camera, (800, 600));
         let at_result = plot.to_primitives_at(&camera, (800, 600), 42.0);
-        assert_eq!(static_result.len(), at_result.len(),
-            "to_primitives_at with no animation should produce same primitive count as to_primitives");
+        assert_eq!(
+            static_result.len(),
+            at_result.len(),
+            "to_primitives_at with no animation should produce same primitive count as to_primitives"
+        );
     }
 
     // --- animate_camera_azimuth / camera_at tests ---
@@ -1722,7 +1720,7 @@ mod tests {
         let plot = make_2x2_plot()
             .animate_camera_azimuth(0.0, 2.0, 0.0, 90.0, Easing::Linear) // ends at t=2.0 → 90°
             .animate_camera_azimuth(5.0, 2.0, 90.0, 180.0, Easing::Linear); // starts at t=5.0
-                                                                            // At t=3.5 (between ranges): hold at 90° (end of first range)
+        // At t=3.5 (between ranges): hold at 90° (end of first range)
         let az = plot.camera_at(3.5).expect("should be Some");
         assert!(
             (az - 90.0).abs() < 1e-9,

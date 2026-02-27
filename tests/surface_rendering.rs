@@ -36,60 +36,90 @@ fn make_paraboloid(n: usize) -> SurfacePlot {
 /// E2E Flow 1: SurfacePlot::new() -> scene.render_static() -> MP4 > 1000 bytes.
 #[test]
 fn static_surface_renders_to_mp4() {
-    if !ffmpeg_available() { return; }
+    if !ffmpeg_available() {
+        return;
+    }
 
     let plot = make_paraboloid(8);
     let camera = Camera::new(45.0, 30.0, 3.0);
     let out = temp_mp4("surface_static_test.mp4");
     let scene = Scene::new(800, 600, 24).expect("valid scene").duration(1.0);
 
-    scene.render_static(|s| {
-        s.add_surface(&plot, &camera, (800, 600));
-    }, &out)
-    .expect("static surface render should succeed");
+    scene
+        .render_static(
+            |s| {
+                s.add_surface(&plot, &camera, (800, 600));
+            },
+            &out,
+        )
+        .expect("static surface render should succeed");
 
     let meta = std::fs::metadata(&out).expect("output MP4 must exist");
-    assert!(meta.len() > 1000, "output file too small: {} bytes", meta.len());
+    assert!(
+        meta.len() > 1000,
+        "output file too small: {} bytes",
+        meta.len()
+    );
     std::fs::remove_file(&out).ok();
 }
 
 /// SURF-02 / audit gap: RenderMode::Wireframe not exercised in any integration test.
 #[test]
 fn wireframe_surface_renders_to_mp4() {
-    if !ffmpeg_available() { return; }
+    if !ffmpeg_available() {
+        return;
+    }
 
     let plot = make_paraboloid(8).render_mode(RenderMode::Wireframe);
     let camera = Camera::new(45.0, 30.0, 3.0);
     let out = temp_mp4("surface_wireframe_test.mp4");
     let scene = Scene::new(800, 600, 24).expect("valid scene").duration(1.0);
 
-    scene.render_static(|s| {
-        s.add_surface(&plot, &camera, (800, 600));
-    }, &out)
-    .expect("wireframe render should succeed");
+    scene
+        .render_static(
+            |s| {
+                s.add_surface(&plot, &camera, (800, 600));
+            },
+            &out,
+        )
+        .expect("wireframe render should succeed");
 
     let meta = std::fs::metadata(&out).expect("output MP4 must exist");
-    assert!(meta.len() > 1000, "output file too small: {} bytes", meta.len());
+    assert!(
+        meta.len() > 1000,
+        "output file too small: {} bytes",
+        meta.len()
+    );
     std::fs::remove_file(&out).ok();
 }
 
 /// SURF-02 / audit gap: RenderMode::ShadedWireframe not exercised in any integration test.
 #[test]
 fn shaded_wireframe_surface_renders_to_mp4() {
-    if !ffmpeg_available() { return; }
+    if !ffmpeg_available() {
+        return;
+    }
 
     let plot = make_paraboloid(8).render_mode(RenderMode::ShadedWireframe);
     let camera = Camera::new(45.0, 30.0, 3.0);
     let out = temp_mp4("surface_shaded_wireframe_test.mp4");
     let scene = Scene::new(800, 600, 24).expect("valid scene").duration(1.0);
 
-    scene.render_static(|s| {
-        s.add_surface(&plot, &camera, (800, 600));
-    }, &out)
-    .expect("shaded wireframe render should succeed");
+    scene
+        .render_static(
+            |s| {
+                s.add_surface(&plot, &camera, (800, 600));
+            },
+            &out,
+        )
+        .expect("shaded wireframe render should succeed");
 
     let meta = std::fs::metadata(&out).expect("output MP4 must exist");
-    assert!(meta.len() > 1000, "output file too small: {} bytes", meta.len());
+    assert!(
+        meta.len() > 1000,
+        "output file too small: {} bytes",
+        meta.len()
+    );
     std::fs::remove_file(&out).ok();
 }
 
@@ -101,15 +131,21 @@ fn to_primitives_contains_face_and_axis_primitives() {
     let camera = Camera::new(45.0, 30.0, 3.0);
     let prims = plot.to_primitives(&camera, (800, 600));
 
-    let bezier_count = prims.iter()
+    let bezier_count = prims
+        .iter()
         .filter(|p| matches!(p, Primitive::Bezier(_)))
         .count();
-    let non_bezier_count = prims.iter()
+    let non_bezier_count = prims
+        .iter()
         .filter(|p| !matches!(p, Primitive::Bezier(_)))
         .count();
 
-    assert!(bezier_count >= 1,
-        "to_primitives should produce Bezier face primitives; got 0");
-    assert!(non_bezier_count > 0,
-        "to_primitives should produce axis Line/Text primitives; got 0");
+    assert!(
+        bezier_count >= 1,
+        "to_primitives should produce Bezier face primitives; got 0"
+    );
+    assert!(
+        non_bezier_count > 0,
+        "to_primitives should produce axis Line/Text primitives; got 0"
+    );
 }

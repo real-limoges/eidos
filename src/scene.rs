@@ -176,67 +176,13 @@ impl SceneBuilder {
             merged_prims.push(prim);
         }
         // Append remaining circles (closer to camera than all existing primitives)
-        for idx in ci..circles.len() {
-            merged_depths.push(circles[idx].0);
-            merged_prims.push(circles[idx].1.clone());
+        for circle in circles.iter().skip(ci) {
+            merged_depths.push(circle.0);
+            merged_prims.push(circle.1.clone());
         }
 
         self.primitives = merged_prims;
         self.prim_depths = merged_depths;
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::animation::Easing;
-    use crate::dataviz::{Camera, SurfacePlot};
-
-    #[test]
-    fn add_surface_adds_primitives_to_builder() {
-        // Flat 2x2 grid with normal pointing +z — visible from any above-horizon camera
-        let plot = SurfacePlot::new(
-            vec![0.0, 1.0, 0.0, 1.0],
-            vec![0.0, 0.0, 1.0, 1.0],
-            vec![0.0, 0.0, 0.0, 0.0],
-            2,
-            2,
-        );
-        let camera = Camera::new(45.0, 30.0, 3.0);
-        let mut sb = SceneBuilder {
-            primitives: vec![],
-            prim_depths: vec![],
-            face_depths: vec![],
-        };
-        sb.add_surface(&plot, &camera, (800, 600));
-        assert!(
-            !sb.primitives.is_empty(),
-            "add_surface should produce at least one primitive"
-        );
-    }
-
-    #[test]
-    fn add_surface_at_produces_primitives() {
-        // Flat 2x2 grid with morph animation registered
-        let plot = SurfacePlot::new(
-            vec![0.0, 1.0, 0.0, 1.0],
-            vec![0.0, 0.0, 1.0, 1.0],
-            vec![0.0, 0.0, 0.0, 0.0],
-            2,
-            2,
-        )
-        .animate_fit(0.0, 3.0, Easing::Linear);
-        let camera = Camera::new(45.0, 30.0, 3.0);
-        let mut sb = SceneBuilder {
-            primitives: vec![],
-            prim_depths: vec![],
-            face_depths: vec![],
-        };
-        sb.add_surface_at(&plot, &camera, (800, 600), 1.5);
-        assert!(
-            !sb.primitives.is_empty(),
-            "add_surface_at should produce primitives"
-        );
     }
 }
 
@@ -251,12 +197,12 @@ impl Scene {
     /// Initializes fontdb with Noto Sans loaded once at construction time.
     pub fn new(width: u32, height: u32, fps: u32) -> Result<Self, EidosError> {
         // H.264 requires even dimensions
-        if width % 2 != 0 {
+        if !width.is_multiple_of(2) {
             return Err(EidosError::InvalidConfig(
                 "width must be an even number".into(),
             ));
         }
-        if height % 2 != 0 {
+        if !height.is_multiple_of(2) {
             return Err(EidosError::InvalidConfig(
                 "height must be an even number".into(),
             ));
@@ -317,7 +263,7 @@ impl Scene {
     /// fontdb is cloned (Arc clone — cheap) before the loop; not re-initialized per frame.
     pub fn render<F, P>(&self, build_scene: F, output_path: P) -> Result<(), EidosError>
     where
-        F: Fn(&mut SceneBuilder, f64),
+        F: Fn(&mut SceneBuilder, f64) + Send + Sync,
         P: AsRef<std::path::Path>,
     {
         let total_frames = (self.fps as f64 * self.duration_secs).round() as u64;
@@ -352,9 +298,63 @@ impl Scene {
     /// Use `render()` directly for animated scenes.
     pub fn render_static<F, P>(&self, build_scene: F, output_path: P) -> Result<(), EidosError>
     where
-        F: Fn(&mut SceneBuilder),
+        F: Fn(&mut SceneBuilder) + Send + Sync,
         P: AsRef<std::path::Path>,
     {
         self.render(|s, _t| build_scene(s), output_path)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::animation::Easing;
+    use crate::dataviz::{Camera, SurfacePlot};
+
+    #[test]
+    fn add_surface_adds_primitives_to_builder() {
+        // Flat 2x2 grid with normal pointing +z — visible from any above-horizon camera
+        let plot = SurfacePlot::new(
+            vec![0.0, 1.0, 0.0, 1.0],
+            vec![0.0, 0.0, 1.0, 1.0],
+            vec![0.0, 0.0, 0.0, 0.0],
+            2,
+            2,
+        );
+        let camera = Camera::new(45.0, 30.0, 3.0);
+        let mut sb = SceneBuilder {
+            primitives: vec![],
+            prim_depths: vec![],
+            face_depths: vec![],
+        };
+        sb.add_surface(&plot, &camera, (800, 600));
+        assert!(
+            !sb.primitives.is_empty(),
+            "add_surface should produce at least one primitive"
+        );
+    }
+
+    #[test]
+    fn add_surface_at_produces_primitives() {
+        // Flat 2x2 grid with morph animation registered
+        let plot = SurfacePlot::new(
+            vec![0.0, 1.0, 0.0, 1.0],
+            vec![0.0, 0.0, 1.0, 1.0],
+            vec![0.0, 0.0, 0.0, 0.0],
+            2,
+            2,
+        )
+        .animate_fit(0.0, 3.0, Easing::Linear);
+        let camera = Camera::new(45.0, 30.0, 3.0);
+        let mut sb = SceneBuilder {
+            primitives: vec![],
+            prim_depths: vec![],
+            face_depths: vec![],
+        };
+        sb.add_surface_at(&plot, &camera, (800, 600), 1.5);
+        assert!(
+            !sb.primitives.is_empty(),
+            "add_surface_at should produce primitives"
+        );
     }
 }

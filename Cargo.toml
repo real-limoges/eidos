@@ -10,6 +10,7 @@ ttf-noto-sans = "0.1"
 keyframe = "1.1"
 keyframe_derive = "1.0"
 nalgebra = "0.34"
+rayon = "1.10"
 
 [[example]]
 name = "basic_scene"
@@ -26,3 +27,11 @@ path = "examples/data_plot.rs"
 [[example]]
 name = "gam_plot"
 path = "examples/gam_plot.rs"
+
+[[example]]
+name = "gam_fitting"
+path = "examples/gam_fitting.rs"
+
+[[example]]
+name = "surface_fitting"
+path = "examples/surface_fitting.rs"

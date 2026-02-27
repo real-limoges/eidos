@@ -55,16 +55,24 @@ fn surface_animation_renders_to_mp4() {
     let elevation_deg = 30.0_f64;
     let distance = 3.0_f64;
 
-    scene.render(|s, t_secs| {
-        // Resolve animated azimuth, or fall back to static 45°
-        let azimuth = plot.camera_at(t_secs).unwrap_or(45.0);
-        let camera = Camera::new(azimuth, elevation_deg, distance);
-        s.add_surface_at(&plot, &camera, (800, 600), t_secs);
-    }, &out)
-    .expect("surface animation render should succeed");
+    scene
+        .render(
+            |s, t_secs| {
+                // Resolve animated azimuth, or fall back to static 45°
+                let azimuth = plot.camera_at(t_secs).unwrap_or(45.0);
+                let camera = Camera::new(azimuth, elevation_deg, distance);
+                s.add_surface_at(&plot, &camera, (800, 600), t_secs);
+            },
+            &out,
+        )
+        .expect("surface animation render should succeed");
 
     let meta = std::fs::metadata(&out).expect("output MP4 must exist");
-    assert!(meta.len() > 1000, "output file too small: {} bytes", meta.len());
+    assert!(
+        meta.len() > 1000,
+        "output file too small: {} bytes",
+        meta.len()
+    );
     std::fs::remove_file(&out).ok();
 }
 
@@ -76,8 +84,7 @@ fn surface_morph_only_renders_to_mp4() {
         return;
     }
 
-    let plot = make_paraboloid(8)
-        .animate_fit(0.0, 2.0, Easing::EaseInOut);
+    let plot = make_paraboloid(8).animate_fit(0.0, 2.0, Easing::EaseInOut);
 
     let static_camera = Camera::new(60.0, 30.0, 3.0);
     let out = temp_mp4("surface_morph_only_test.mp4");
@@ -86,13 +93,21 @@ fn surface_morph_only_renders_to_mp4() {
         .expect("valid scene config")
         .duration(2.0);
 
-    scene.render(|s, t_secs| {
-        s.add_surface_at(&plot, &static_camera, (800, 600), t_secs);
-    }, &out)
-    .expect("surface morph render should succeed");
+    scene
+        .render(
+            |s, t_secs| {
+                s.add_surface_at(&plot, &static_camera, (800, 600), t_secs);
+            },
+            &out,
+        )
+        .expect("surface morph render should succeed");
 
     let meta = std::fs::metadata(&out).expect("output MP4 must exist");
-    assert!(meta.len() > 1000, "output file too small: {} bytes", meta.len());
+    assert!(
+        meta.len() > 1000,
+        "output file too small: {} bytes",
+        meta.len()
+    );
     std::fs::remove_file(&out).ok();
 }
 
@@ -105,8 +120,7 @@ fn camera_orbit_only_renders_to_mp4() {
     }
 
     // No animate_fit — surface renders fully fitted from frame 0
-    let plot = make_paraboloid(8)
-        .animate_camera_azimuth(0.0, 2.0, 30.0, 210.0, Easing::Linear);
+    let plot = make_paraboloid(8).animate_camera_azimuth(0.0, 2.0, 30.0, 210.0, Easing::Linear);
 
     let out = temp_mp4("camera_orbit_only_test.mp4");
 
@@ -114,15 +128,23 @@ fn camera_orbit_only_renders_to_mp4() {
         .expect("valid scene config")
         .duration(2.0);
 
-    scene.render(|s, t_secs| {
-        let azimuth = plot.camera_at(t_secs).unwrap_or(30.0);
-        let camera = Camera::new(azimuth, 30.0, 3.0);
-        // Use to_primitives (not add_surface_at) to verify static surface renders correctly during orbit
-        s.add_surface(&plot, &camera, (800, 600));
-    }, &out)
-    .expect("camera orbit render should succeed");
+    scene
+        .render(
+            |s, t_secs| {
+                let azimuth = plot.camera_at(t_secs).unwrap_or(30.0);
+                let camera = Camera::new(azimuth, 30.0, 3.0);
+                // Use to_primitives (not add_surface_at) to verify static surface renders correctly during orbit
+                s.add_surface(&plot, &camera, (800, 600));
+            },
+            &out,
+        )
+        .expect("camera orbit render should succeed");
 
     let meta = std::fs::metadata(&out).expect("output MP4 must exist");
-    assert!(meta.len() > 1000, "output file too small: {} bytes", meta.len());
+    assert!(
+        meta.len() > 1000,
+        "output file too small: {} bytes",
+        meta.len()
+    );
     std::fs::remove_file(&out).ok();
 }
