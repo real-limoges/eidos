@@ -317,7 +317,7 @@ impl Scene {
     /// fontdb is cloned (Arc clone — cheap) before the loop; not re-initialized per frame.
     pub fn render<F, P>(&self, build_scene: F, output_path: P) -> Result<(), EidosError>
     where
-        F: Fn(&mut SceneBuilder, f64),
+        F: Fn(&mut SceneBuilder, f64) + Send + Sync,
         P: AsRef<std::path::Path>,
     {
         let total_frames = (self.fps as f64 * self.duration_secs).round() as u64;
@@ -352,7 +352,7 @@ impl Scene {
     /// Use `render()` directly for animated scenes.
     pub fn render_static<F, P>(&self, build_scene: F, output_path: P) -> Result<(), EidosError>
     where
-        F: Fn(&mut SceneBuilder),
+        F: Fn(&mut SceneBuilder) + Send + Sync,
         P: AsRef<std::path::Path>,
     {
         self.render(|s, _t| build_scene(s), output_path)

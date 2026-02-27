@@ -116,10 +116,13 @@ pub fn encode_to_mp4_animated<F>(
     output_path: &std::path::Path,
 ) -> Result<(), EidosError>
 where
-    F: Fn(u64) -> Result<Vec<u8>, EidosError>,
+    F: Fn(u64) -> Result<Vec<u8>, EidosError> + Sync,
 {
+    use rayon::prelude::*;
     use std::io::Write;
     use std::process::{Command, Stdio};
+
+    const CHUNK_SIZE: u64 = 64;
 
     let output_str = output_path
         .to_str()
@@ -155,11 +158,20 @@ where
             .as_mut()
             .ok_or_else(|| EidosError::RenderFailed("failed to open ffmpeg stdin".into()))?;
 
-        for frame_idx in 0..total_frames {
-            let rgba = frame_fn(frame_idx)?;
-            stdin.write_all(&rgba).map_err(|e| {
-                EidosError::RenderFailed(format!("failed to write frame to ffmpeg: {}", e))
-            })?;
+        for chunk_start in (0..total_frames).step_by(CHUNK_SIZE as usize) {
+            let chunk_end = (chunk_start + CHUNK_SIZE).min(total_frames);
+
+            let frames: Vec<Result<Vec<u8>, EidosError>> = (chunk_start..chunk_end)
+                .into_par_iter()
+                .map(|frame_idx| frame_fn(frame_idx))
+                .collect();
+
+            for frame_result in frames {
+                let rgba = frame_result?;
+                stdin.write_all(&rgba).map_err(|e| {
+                    EidosError::RenderFailed(format!("failed to write frame to ffmpeg: {}", e))
+                })?;
+            }
         }
     }
 
