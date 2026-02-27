@@ -1,7 +1,7 @@
 // src/animation/tween.rs
 use crate::animation::Easing;
 use keyframe::functions::{EaseIn, EaseInOut, EaseOut, Linear};
-use keyframe::{ease, CanTween};
+use keyframe::{CanTween, ease};
 
 /// A tween that interpolates between two states of type P over a duration.
 pub struct Tween<P: CanTween + Clone> {
@@ -86,9 +86,9 @@ impl<P: CanTween + Clone> TweenBuilder<P> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::Color;
     use crate::animation::Easing;
     use crate::primitives::circle::CircleState;
-    use crate::Color;
 
     fn make_tween(easing: Easing) -> Tween<CircleState> {
         Tween::build(

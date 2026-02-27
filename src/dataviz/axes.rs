@@ -1,9 +1,9 @@
 // src/dataviz/axes.rs
 
+use crate::Color;
 use crate::dataviz::ConfidenceBand;
 use crate::dataviz::DataCurve;
 use crate::primitives::{Bezier, Line, Primitive, Text};
-use crate::Color;
 
 const TICK_LENGTH: f64 = 6.0;
 const TICK_LABEL_OFFSET: f64 = 14.0; // pixels from tick end to label center

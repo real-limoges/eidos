@@ -80,8 +80,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .collect();
 
     // Confidence band upper/lower
-    let upper: Vec<(f64, f64)> = fitted.iter().map(|&(x, y)| (x, y + band_width(x))).collect();
-    let lower: Vec<(f64, f64)> = fitted.iter().map(|&(x, y)| (x, y - band_width(x))).collect();
+    let upper: Vec<(f64, f64)> = fitted
+        .iter()
+        .map(|&(x, y)| (x, y + band_width(x)))
+        .collect();
+    let lower: Vec<(f64, f64)> = fitted
+        .iter()
+        .map(|&(x, y)| (x, y - band_width(x)))
+        .collect();
 
     // Mean of observed y-values (for the mean line)
     let mean_y: f64 = scatter_data.iter().map(|(_, y)| y).sum::<f64>() / scatter_data.len() as f64;
@@ -102,11 +108,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let fitted_visual: Vec<(f64, f64)> =
         fitted.iter().map(|&(x, y)| axes.map_point(x, y)).collect();
 
-    let upper_visual: Vec<(f64, f64)> =
-        upper.iter().map(|&(x, y)| axes.map_point(x, y)).collect();
+    let upper_visual: Vec<(f64, f64)> = upper.iter().map(|&(x, y)| axes.map_point(x, y)).collect();
 
-    let lower_visual: Vec<(f64, f64)> =
-        lower.iter().map(|&(x, y)| axes.map_point(x, y)).collect();
+    let lower_visual: Vec<(f64, f64)> = lower.iter().map(|&(x, y)| axes.map_point(x, y)).collect();
 
     // Mean line endpoints in visual space
     let mean_left = axes.map_point(0.0, mean_y);
@@ -125,8 +129,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .animate_fit(22.0, 4.0, Easing::EaseInOut);
 
     // --- ConfidenceBand ---
-    let band = ConfidenceBand::new(upper, lower)?
-        .fill_color(Color::rgb(100, 149, 237));
+    let band = ConfidenceBand::new(upper, lower)?.fill_color(Color::rgb(100, 149, 237));
 
     // --- Title tween: fade in 0.0→1.0s, hold 1.0→2.0s, fade out 2.0→3.0s ---
     let title_in = Tween::build(
@@ -187,7 +190,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             }
 
             // --- Phase: "Raw observations" label (7.0–9.0s) ---
-            if t >= 7.0 && t < 10.0 {
+            if (7.0..10.0).contains(&t) {
                 let label_opacity = ((t - 7.0) / 0.5).clamp(0.0, 1.0);
                 s.add(
                     Text::new(640.0, 40.0, "Raw observations")

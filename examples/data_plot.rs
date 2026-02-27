@@ -27,11 +27,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         })
         .collect();
 
-    let sine_curve = DataCurve::new(sine_data)?
-        .stroke(Color::CYAN, 2.5);
+    let sine_curve = DataCurve::new(sine_data)?.stroke(Color::CYAN, 2.5);
 
-    let cosine_curve = DataCurve::new(cosine_data)?
-        .stroke(Color::rgb(255, 165, 0), 2.5);  // orange
+    let cosine_curve = DataCurve::new(cosine_data)?.stroke(Color::rgb(255, 165, 0), 2.5); // orange
 
     // Axes auto-range -- both curves fit within [-1.1, 1.1] y with 7% padding
     let axes = Axes::new(80.0, 60.0, 840.0, 480.0)
@@ -42,9 +40,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let scene = Scene::new(1024, 640, 24)?.duration(1.0);
 
-    scene.render_static(|s| {
-        s.add_axes(&axes);
-    }, "/tmp/data_plot.mp4")?;
+    scene.render_static(
+        |s| {
+            s.add_axes(&axes);
+        },
+        "/tmp/data_plot.mp4",
+    )?;
 
     println!("Rendered: /tmp/data_plot.mp4");
     Ok(())

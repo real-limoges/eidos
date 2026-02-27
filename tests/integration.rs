@@ -156,7 +156,7 @@ fn easing_midpoint_differs_between_linear_and_ease_in_out() {
 
 #[test]
 fn line_state_and_text_state_tween_midpoint_values() {
-    use eidos::{Easing, LineState, TextState, Tween};
+    use eidos::{LineState, TextState, Tween};
 
     // LineState: x1 moves 100 -> 300 over 1s with Linear easing — midpoint should be 200
     let line_tween = Tween::build(
@@ -191,7 +191,7 @@ fn line_state_and_text_state_tween_midpoint_values() {
 
 #[test]
 fn parallel_animations_both_execute() {
-    use eidos::{CircleState, Easing, RectState, Tween};
+    use eidos::{CircleState, RectState, Tween};
 
     // Two independent tweens at t=0.5
     let circle_tween = Tween::build(

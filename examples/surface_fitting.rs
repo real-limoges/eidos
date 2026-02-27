@@ -12,7 +12,7 @@
 //   5. Full composition holds while camera continues rotating
 
 use eidos::{
-    Camera, Color, Easing, RenderMode, Scene, ScatterPlot, SurfacePlot, Text, TextState, Tween,
+    Camera, Color, Easing, RenderMode, ScatterPlot, Scene, SurfacePlot, Text, TextState, Tween,
 };
 
 /// Simple LCG pseudo-random number generator (deterministic, no external crate).
@@ -139,7 +139,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 }
 
                 // Phase labels
-                if t >= 3.0 && t < 9.0 {
+                if (3.0..9.0).contains(&t) {
                     let label_opacity = if t < 4.0 {
                         (t - 3.0).clamp(0.0, 1.0)
                     } else if t > 8.0 {
@@ -156,7 +156,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     );
                 }
 
-                if t >= 12.0 && t < 18.0 {
+                if (12.0..18.0).contains(&t) {
                     let label_opacity = if t < 13.0 {
                         (t - 12.0).clamp(0.0, 1.0)
                     } else if t > 17.0 {

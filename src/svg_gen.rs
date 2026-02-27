@@ -18,8 +18,8 @@ pub fn build_svg_document(
     height: u32,
     primitives: &[crate::primitives::Primitive],
 ) -> String {
-    use svg::node::element::Rectangle;
     use svg::Document;
+    use svg::node::element::Rectangle;
 
     let mut doc = Document::new()
         .set("width", width)
@@ -79,8 +79,10 @@ pub fn rasterize_frame(
     use resvg::tiny_skia;
     use resvg::usvg::{self, Options};
 
-    let mut options = Options::default();
-    options.fontdb = fontdb.clone();
+    let options = Options {
+        fontdb: fontdb.clone(),
+        ..Default::default()
+    };
 
     let tree = usvg::Tree::from_str(svg_str, &options)
         .map_err(|e| EidosError::RenderFailed(format!("SVG parse error: {}", e)))?;
@@ -163,7 +165,7 @@ where
 
             let frames: Vec<Result<Vec<u8>, EidosError>> = (chunk_start..chunk_end)
                 .into_par_iter()
-                .map(|frame_idx| frame_fn(frame_idx))
+                .map(&frame_fn)
                 .collect();
 
             for frame_result in frames {

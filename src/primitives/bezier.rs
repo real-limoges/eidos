@@ -113,8 +113,8 @@ impl Bezier {
 
     /// Convert to an svg::node::element::Path node for inclusion in an SVG document.
     pub fn to_svg_element(&self) -> svg::node::element::Path {
-        use svg::node::element::path::Data;
         use svg::node::element::Path as SvgPath;
+        use svg::node::element::path::Data;
 
         let mut data = Data::new();
         for cmd in &self.commands {
