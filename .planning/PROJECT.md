@@ -52,7 +52,12 @@ A Rust-native way to produce beautiful, animated data visualizations with a decl
 
 ### Active
 
-*(Next milestone requirements go here — run `/gsd:new-milestone` to define)*
+<!-- v1.2 — API Polish & Ergonomics -->
+
+- [ ] State types (`CircleState`, `RectState`, `LineState`, `TextState`) accept `Color` directly — no raw `fill_r/g/b` f64 fields required (ERGO-01)
+- [ ] `Tween` fluent builder API — chain `.from()/.to()/.start_at()/.over()/.easing()` instead of struct literal (ERGO-02)
+- [ ] `Axes::map_point(data_x, data_y) -> (f64, f64)` — data-to-pixel coordinate helper (COORD-01)
+- [ ] All primitive builder methods infallible — `.opacity()`, `.stroke()`, `.font_size()` return `Self` with clamped values (API-01)
 
 ### Out of Scope
 
@@ -104,5 +109,15 @@ A Rust-native way to produce beautiful, animated data visualizations with a decl
 | Non-surface primitives (axes, labels) get prim_depths = NEG_INFINITY | Always painted on top; never occluded by surface or scatter | ✓ Good |
 | requirements-completed YAML key uses hyphens (not underscores) | gsd-tools reads fm['requirements-completed'] per commands.cjs:307 | ✓ Documented |
 
+## Current Milestone: v1.2 API Polish & Ergonomics
+
+**Goal:** Eliminate the most common friction points in the eidos API — verbose animation state construction, manual coordinate math, and unpredictable `?` in builder chains.
+
+**Target features:**
+- State types accept `Color` directly
+- `Tween` fluent builder
+- `Axes::map_point()` coordinate helper
+- Infallible primitive builders
+
 ---
-*Last updated: 2026-02-26 after v1.1 milestone — 3D Surface Visualization*
+*Last updated: 2026-02-26 after v1.2 milestone start — API Polish & Ergonomics*

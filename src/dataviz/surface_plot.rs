@@ -13,19 +13,19 @@
 //! Call [`SurfacePlot::to_primitives`] with a [`Camera`] to get SVG-ready primitives.
 //! Uses the painter's algorithm: backface cull, sort back-to-front, emit one quad per face.
 
-use crate::dataviz::camera::Point3D;
-use crate::dataviz::camera::Camera;
-use crate::dataviz::colormap::viridis_color;
-use crate::dataviz::axes::{generate_ticks, format_tick};
-use crate::primitives::{Primitive, Bezier, Line, Text};
-use crate::Color;
 use crate::animation::{Easing, Tween};
+use crate::dataviz::axes::{format_tick, generate_ticks};
+use crate::dataviz::camera::Camera;
+use crate::dataviz::camera::Point3D;
+use crate::dataviz::colormap::viridis_color;
+use crate::primitives::{Bezier, Line, Primitive, Text};
+use crate::Color;
 
 /// Internal record for one animate_fit time range.
 struct FitAnimation {
     start_time: f64,
-    duration:   f64,
-    easing:     Easing,
+    duration: f64,
+    easing: Easing,
 }
 
 impl std::fmt::Debug for FitAnimation {
@@ -39,17 +39,21 @@ impl std::fmt::Debug for FitAnimation {
 
 impl Clone for FitAnimation {
     fn clone(&self) -> Self {
-        FitAnimation { start_time: self.start_time, duration: self.duration, easing: self.easing }
+        FitAnimation {
+            start_time: self.start_time,
+            duration: self.duration,
+            easing: self.easing,
+        }
     }
 }
 
 /// Internal record for one animate_camera_azimuth time range.
 struct CameraAnimation {
-    start_time:  f64,
-    duration:    f64,
+    start_time: f64,
+    duration: f64,
     start_angle: f64,
-    end_angle:   f64,
-    easing:      Easing,
+    end_angle: f64,
+    easing: Easing,
 }
 
 impl std::fmt::Debug for CameraAnimation {
@@ -66,8 +70,10 @@ impl std::fmt::Debug for CameraAnimation {
 impl Clone for CameraAnimation {
     fn clone(&self) -> Self {
         CameraAnimation {
-            start_time: self.start_time, duration: self.duration,
-            start_angle: self.start_angle, end_angle: self.end_angle,
+            start_time: self.start_time,
+            duration: self.duration,
+            start_angle: self.start_angle,
+            end_angle: self.end_angle,
             easing: self.easing,
         }
     }
@@ -150,19 +156,31 @@ impl SurfacePlot {
     pub fn new(xs: Vec<f64>, ys: Vec<f64>, zs: Vec<f64>, rows: usize, cols: usize) -> Self {
         let n = rows * cols;
         assert_eq!(
-            xs.len(), n,
+            xs.len(),
+            n,
             "xs.len() ({}) != rows * cols ({}*{}={})",
-            xs.len(), rows, cols, n
+            xs.len(),
+            rows,
+            cols,
+            n
         );
         assert_eq!(
-            ys.len(), n,
+            ys.len(),
+            n,
             "ys.len() ({}) != rows * cols ({}*{}={})",
-            ys.len(), rows, cols, n
+            ys.len(),
+            rows,
+            cols,
+            n
         );
         assert_eq!(
-            zs.len(), n,
+            zs.len(),
+            n,
             "zs.len() ({}) != rows * cols ({}*{}={})",
-            zs.len(), rows, cols, n
+            zs.len(),
+            rows,
+            cols,
+            n
         );
 
         let (x_data_min, x_data_max) = min_max(&xs);
@@ -248,7 +266,11 @@ impl SurfacePlot {
     /// Multiple non-overlapping calls are supported (e.g. two separate morph sequences).
     /// If animate_fit is never called, to_primitives_at behaves identically to to_primitives.
     pub fn animate_fit(mut self, start_time: f64, duration: f64, easing: Easing) -> Self {
-        self.fit_animations.push(FitAnimation { start_time, duration, easing });
+        self.fit_animations.push(FitAnimation {
+            start_time,
+            duration,
+            easing,
+        });
         self
     }
 
@@ -270,7 +292,11 @@ impl SurfacePlot {
         easing: Easing,
     ) -> Self {
         self.camera_animations.push(CameraAnimation {
-            start_time, duration, start_angle, end_angle, easing,
+            start_time,
+            duration,
+            start_angle,
+            end_angle,
+            easing,
         });
         self
     }
@@ -291,7 +317,7 @@ impl SurfacePlot {
         // For robustness, still handle any order by scanning all ranges.
 
         let first = &self.fit_animations[0];
-        let last  = &self.fit_animations[self.fit_animations.len() - 1];
+        let last = &self.fit_animations[self.fit_animations.len() - 1];
 
         // Before all animations: hold flat (z=0)
         if t_secs < first.start_time {
@@ -310,10 +336,10 @@ impl SurfacePlot {
                 // Inside this range: interpolate from 0.0 to fitted_z
                 let tween = Tween {
                     start: 0.0_f64,
-                    end:   fitted_z,
+                    end: fitted_z,
                     start_time: anim.start_time,
-                    duration:   anim.duration,
-                    easing:     anim.easing,
+                    duration: anim.duration,
+                    easing: anim.easing,
                 };
                 return tween.value_at(t_secs);
             }
@@ -341,7 +367,7 @@ impl SurfacePlot {
         }
 
         let first = &self.camera_animations[0];
-        let last  = &self.camera_animations[self.camera_animations.len() - 1];
+        let last = &self.camera_animations[self.camera_animations.len() - 1];
 
         // Hold-first: before all animations
         if t_secs < first.start_time {
@@ -360,10 +386,10 @@ impl SurfacePlot {
             if t_secs >= anim.start_time && t_secs < end {
                 let tween = Tween {
                     start: anim.start_angle,
-                    end:   anim.end_angle,
+                    end: anim.end_angle,
                     start_time: anim.start_time,
-                    duration:   anim.duration,
-                    easing:     anim.easing,
+                    duration: anim.duration,
+                    easing: anim.easing,
                 };
                 return Some(tween.value_at(t_secs));
             }
@@ -433,21 +459,29 @@ impl SurfacePlot {
                 let p10 = self.world_point(r + 1, c);
                 let p11 = self.world_point(r + 1, c + 1);
 
-                let ex = p01.x - p00.x; let ey = p01.y - p00.y; let ez = p01.z - p00.z;
-                let fx = p10.x - p00.x; let fy = p10.y - p00.y; let fz = p10.z - p00.z;
+                let ex = p01.x - p00.x;
+                let ey = p01.y - p00.y;
+                let ez = p01.z - p00.z;
+                let fx = p10.x - p00.x;
+                let fy = p10.y - p00.y;
+                let fz = p10.z - p00.z;
                 let normal = Vector3D {
                     x: ey * fz - ez * fy,
                     y: ez * fx - ex * fz,
                     z: ex * fy - ey * fx,
                 };
 
-                if !camera.is_face_visible(normal) { continue; }
+                if !camera.is_face_visible(normal) {
+                    continue;
+                }
 
                 let cx = (p00.x + p01.x + p10.x + p11.x) / 4.0;
                 let cy = (p00.y + p01.y + p10.y + p11.y) / 4.0;
                 let cz = (p00.z + p01.z + p10.z + p11.z) / 4.0;
-                let dx = cx - eye_x; let dy = cy - eye_y; let dz = cz - eye_z;
-                depths.push(dx*dx + dy*dy + dz*dz);
+                let dx = cx - eye_x;
+                let dy = cy - eye_y;
+                let dz = cz - eye_z;
+                depths.push(dx * dx + dy * dy + dz * dz);
             }
         }
 
@@ -458,15 +492,25 @@ impl SurfacePlot {
     ///
     /// Used by SceneBuilder::add_surface_at() to provide correct face_depths
     /// that match the animated surface geometry used by to_primitives_at().
-    pub fn visible_face_depths_at(&self, camera: &Camera, viewport: (u32, u32), t_secs: f64) -> Vec<f64> {
+    pub fn visible_face_depths_at(
+        &self,
+        camera: &Camera,
+        viewport: (u32, u32),
+        t_secs: f64,
+    ) -> Vec<f64> {
         use crate::dataviz::camera::Vector3D;
         let _ = viewport;
 
         // Build animated world vertices
-        let animated: Vec<Point3D> = self.world_vertices
+        let animated: Vec<Point3D> = self
+            .world_vertices
             .iter()
             .enumerate()
-            .map(|(i, p)| Point3D { x: p.x, y: p.y, z: self.z_at(self.fitted_zs[i], t_secs) })
+            .map(|(i, p)| Point3D {
+                x: p.x,
+                y: p.y,
+                z: self.z_at(self.fitted_zs[i], t_secs),
+            })
             .collect();
         let anim_point = |r: usize, c: usize| -> Point3D { animated[r * self.cols + c] };
 
@@ -481,21 +525,29 @@ impl SurfacePlot {
                 let p10 = anim_point(r + 1, c);
                 let p11 = anim_point(r + 1, c + 1);
 
-                let ex = p01.x - p00.x; let ey = p01.y - p00.y; let ez = p01.z - p00.z;
-                let fx = p10.x - p00.x; let fy = p10.y - p00.y; let fz = p10.z - p00.z;
+                let ex = p01.x - p00.x;
+                let ey = p01.y - p00.y;
+                let ez = p01.z - p00.z;
+                let fx = p10.x - p00.x;
+                let fy = p10.y - p00.y;
+                let fz = p10.z - p00.z;
                 let normal = Vector3D {
                     x: ey * fz - ez * fy,
                     y: ez * fx - ex * fz,
                     z: ex * fy - ey * fx,
                 };
 
-                if !camera.is_face_visible(normal) { continue; }
+                if !camera.is_face_visible(normal) {
+                    continue;
+                }
 
                 let cx = (p00.x + p01.x + p10.x + p11.x) / 4.0;
                 let cy = (p00.y + p01.y + p10.y + p11.y) / 4.0;
                 let cz = (p00.z + p01.z + p10.z + p11.z) / 4.0;
-                let dx = cx - eye_x; let dy = cy - eye_y; let dz = cz - eye_z;
-                depths.push(dx*dx + dy*dy + dz*dz);
+                let dx = cx - eye_x;
+                let dy = cy - eye_y;
+                let dz = cz - eye_z;
+                depths.push(dx * dx + dy * dy + dz * dz);
             }
         }
 
@@ -575,7 +627,12 @@ impl SurfacePlot {
                 let dz = cz - eye_z;
                 let depth_sq = dx * dx + dy * dy + dz * dz;
 
-                faces.push(FaceEntry { row: r, col: c, depth_sq, centroid_z_norm: cz });
+                faces.push(FaceEntry {
+                    row: r,
+                    col: c,
+                    depth_sq,
+                    centroid_z_norm: cz,
+                });
             }
         }
 
@@ -594,10 +651,22 @@ impl SurfacePlot {
             let c = face.col;
 
             // Retrieve precomputed projected corners; skip face if any corner is behind near plane
-            let s00 = match projected[r][c] { Some(p) => p, None => continue };
-            let s01 = match projected[r][c + 1] { Some(p) => p, None => continue };
-            let s11 = match projected[r + 1][c + 1] { Some(p) => p, None => continue };
-            let s10 = match projected[r + 1][c] { Some(p) => p, None => continue };
+            let s00 = match projected[r][c] {
+                Some(p) => p,
+                None => continue,
+            };
+            let s01 = match projected[r][c + 1] {
+                Some(p) => p,
+                None => continue,
+            };
+            let s11 = match projected[r + 1][c + 1] {
+                Some(p) => p,
+                None => continue,
+            };
+            let s10 = match projected[r + 1][c] {
+                Some(p) => p,
+                None => continue,
+            };
 
             // Winding order: (r,c) → (r,c+1) → (r+1,c+1) → (r+1,c)
             // This traces the quad edges consistently (never a bowtie/self-intersecting polygon)
@@ -652,11 +721,17 @@ impl SurfacePlot {
     ///
     /// If animate_fit() was never called, this produces identical output to to_primitives().
     /// Takes &self — safe to call from within a Fn (non-mutable) render closure.
-    pub fn to_primitives_at(&self, camera: &Camera, viewport: (u32, u32), t_secs: f64) -> Vec<Primitive> {
+    pub fn to_primitives_at(
+        &self,
+        camera: &Camera,
+        viewport: (u32, u32),
+        t_secs: f64,
+    ) -> Vec<Primitive> {
         use crate::dataviz::camera::Vector3D;
 
         // Build animated world vertices: same x,y as fitted, but z interpolated at t_secs
-        let animated: Vec<Point3D> = self.world_vertices
+        let animated: Vec<Point3D> = self
+            .world_vertices
             .iter()
             .enumerate()
             .map(|(i, p)| Point3D {
@@ -667,9 +742,7 @@ impl SurfacePlot {
             .collect();
 
         // Helper closure to look up animated vertex at (row, col)
-        let anim_point = |r: usize, c: usize| -> Point3D {
-            animated[r * self.cols + c]
-        };
+        let anim_point = |r: usize, c: usize| -> Point3D { animated[r * self.cols + c] };
 
         // Precompute projected screen positions using animated vertices
         let projected: Vec<Vec<Option<crate::dataviz::camera::Point2D>>> = (0..self.rows)
@@ -699,24 +772,37 @@ impl SurfacePlot {
                 let p10 = anim_point(r + 1, c);
                 let p11 = anim_point(r + 1, c + 1);
 
-                let ex = p01.x - p00.x; let ey = p01.y - p00.y; let ez = p01.z - p00.z;
-                let fx = p10.x - p00.x; let fy = p10.y - p00.y; let fz = p10.z - p00.z;
+                let ex = p01.x - p00.x;
+                let ey = p01.y - p00.y;
+                let ez = p01.z - p00.z;
+                let fx = p10.x - p00.x;
+                let fy = p10.y - p00.y;
+                let fz = p10.z - p00.z;
                 let normal = Vector3D {
                     x: ey * fz - ez * fy,
                     y: ez * fx - ex * fz,
                     z: ex * fy - ey * fx,
                 };
 
-                if !camera.is_face_visible(normal) { continue; }
+                if !camera.is_face_visible(normal) {
+                    continue;
+                }
 
                 let cx = (p00.x + p01.x + p10.x + p11.x) / 4.0;
                 let cy = (p00.y + p01.y + p10.y + p11.y) / 4.0;
                 let cz = (p00.z + p01.z + p10.z + p11.z) / 4.0;
 
-                let dx = cx - eye_x; let dy = cy - eye_y; let dz = cz - eye_z;
-                let depth_sq = dx*dx + dy*dy + dz*dz;
+                let dx = cx - eye_x;
+                let dy = cy - eye_y;
+                let dz = cz - eye_z;
+                let depth_sq = dx * dx + dy * dy + dz * dz;
 
-                faces.push(FaceEntry { row: r, col: c, depth_sq, centroid_z_norm: cz });
+                faces.push(FaceEntry {
+                    row: r,
+                    col: c,
+                    depth_sq,
+                    centroid_z_norm: cz,
+                });
             }
         }
 
@@ -729,36 +815,58 @@ impl SurfacePlot {
         let mut prims: Vec<Primitive> = Vec::with_capacity(faces.len());
 
         for face in &faces {
-            let r = face.row; let c = face.col;
-            let s00 = match projected[r][c]     { Some(p) => p, None => continue };
-            let s01 = match projected[r][c + 1] { Some(p) => p, None => continue };
-            let s11 = match projected[r+1][c+1] { Some(p) => p, None => continue };
-            let s10 = match projected[r+1][c]   { Some(p) => p, None => continue };
+            let r = face.row;
+            let c = face.col;
+            let s00 = match projected[r][c] {
+                Some(p) => p,
+                None => continue,
+            };
+            let s01 = match projected[r][c + 1] {
+                Some(p) => p,
+                None => continue,
+            };
+            let s11 = match projected[r + 1][c + 1] {
+                Some(p) => p,
+                None => continue,
+            };
+            let s10 = match projected[r + 1][c] {
+                Some(p) => p,
+                None => continue,
+            };
 
             match self.render_mode {
                 RenderMode::Shaded => {
                     let t = (face.centroid_z_norm + 1.0) / 2.0;
                     let face_color = viridis_color(t);
                     let path = Bezier::new()
-                        .move_to(s00.x, s00.y).line_to(s01.x, s01.y)
-                        .line_to(s11.x, s11.y).line_to(s10.x, s10.y)
-                        .close().fill(face_color);
+                        .move_to(s00.x, s00.y)
+                        .line_to(s01.x, s01.y)
+                        .line_to(s11.x, s11.y)
+                        .line_to(s10.x, s10.y)
+                        .close()
+                        .fill(face_color);
                     prims.push(path.into());
                 }
                 RenderMode::Wireframe => {
                     let path = Bezier::new()
-                        .move_to(s00.x, s00.y).line_to(s01.x, s01.y)
-                        .line_to(s11.x, s11.y).line_to(s10.x, s10.y)
-                        .close().stroke(charcoal, WIRE_STROKE_WIDTH);
+                        .move_to(s00.x, s00.y)
+                        .line_to(s01.x, s01.y)
+                        .line_to(s11.x, s11.y)
+                        .line_to(s10.x, s10.y)
+                        .close()
+                        .stroke(charcoal, WIRE_STROKE_WIDTH);
                     prims.push(path.into());
                 }
                 RenderMode::ShadedWireframe => {
                     let t = (face.centroid_z_norm + 1.0) / 2.0;
                     let face_color = viridis_color(t);
                     let path = Bezier::new()
-                        .move_to(s00.x, s00.y).line_to(s01.x, s01.y)
-                        .line_to(s11.x, s11.y).line_to(s10.x, s10.y)
-                        .close().fill(face_color)
+                        .move_to(s00.x, s00.y)
+                        .line_to(s01.x, s01.y)
+                        .line_to(s11.x, s11.y)
+                        .line_to(s10.x, s10.y)
+                        .close()
+                        .fill(face_color)
                         .stroke(charcoal, SHADED_WIRE_STROKE_WIDTH);
                     prims.push(path.into());
                 }
@@ -780,9 +888,9 @@ impl SurfacePlot {
     /// Tick labels use data-space values (from SurfacePlot data extents).
     fn draw_axes(&self, camera: &Camera, viewport: (u32, u32)) -> Vec<Primitive> {
         const N_TICKS: usize = 5;
-        const TICK_HALF_LEN: f64 = 8.0;      // half-length of tick mark in screen pixels
-        const LABEL_OFFSET: f64 = 16.0;       // screen pixel offset for tick value label
-        const AXIS_LABEL_OFFSET: f64 = 28.0;  // screen pixel offset for axis name label
+        const TICK_HALF_LEN: f64 = 8.0; // half-length of tick mark in screen pixels
+        const LABEL_OFFSET: f64 = 16.0; // screen pixel offset for tick value label
+        const AXIS_LABEL_OFFSET: f64 = 28.0; // screen pixel offset for axis name label
         const AXIS_STROKE_WIDTH: f64 = 1.5;
         const TICK_STROKE_WIDTH: f64 = 1.0;
         const TICK_LABEL_SIZE: f64 = 10.0;
@@ -799,26 +907,41 @@ impl SurfacePlot {
         let x_end_x = -fx;
         let y_end_y = -fy;
 
-        let (x_data_min, x_data_max, y_data_min, y_data_max, z_data_min, z_data_max) = self.data_extents();
+        let (x_data_min, x_data_max, y_data_min, y_data_max, z_data_min, z_data_max) =
+            self.data_extents();
 
         // --- X AXIS ---
         {
-            let start = crate::dataviz::camera::Point3D { x: fx, y: fy, z: fz };
-            let end   = crate::dataviz::camera::Point3D { x: x_end_x, y: fy, z: fz };
+            let start = crate::dataviz::camera::Point3D {
+                x: fx,
+                y: fy,
+                z: fz,
+            };
+            let end = crate::dataviz::camera::Point3D {
+                x: x_end_x,
+                y: fy,
+                z: fz,
+            };
 
             if let (Some(s0), Some(s1)) = (
                 camera.project_to_screen(start, viewport),
                 camera.project_to_screen(end, viewport),
             ) {
                 // Draw axis line
-                prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
-                    .stroke_color(axis_color)
-                    .stroke_width(AXIS_STROKE_WIDTH)
-                    .into());
+                prims.push(
+                    Line::new(s0.x, s0.y, s1.x, s1.y)
+                        .stroke_color(axis_color)
+                        .stroke_width(AXIS_STROKE_WIDTH)
+                        .into(),
+                );
 
                 // Tick marks and labels
                 let x_ticks = generate_ticks(x_data_min, x_data_max, N_TICKS);
-                let x_step = if x_ticks.len() >= 2 { x_ticks[1] - x_ticks[0] } else { 1.0 };
+                let x_step = if x_ticks.len() >= 2 {
+                    x_ticks[1] - x_ticks[0]
+                } else {
+                    1.0
+                };
                 for &tick_val in &x_ticks {
                     let t = if (x_data_max - x_data_min).abs() < 1e-12 {
                         0.0
@@ -827,55 +950,79 @@ impl SurfacePlot {
                     };
                     // Interpolate tick world position along axis
                     let wx = fx + (x_end_x - fx) * (t + 1.0) / 2.0;
-                    let world_tick = crate::dataviz::camera::Point3D { x: wx, y: fy, z: fz };
+                    let world_tick = crate::dataviz::camera::Point3D {
+                        x: wx,
+                        y: fy,
+                        z: fz,
+                    };
                     if let Some(sp) = camera.project_to_screen(world_tick, viewport) {
                         // Perpendicular direction to axis in screen space
                         let perp_dx = -(s1.y - s0.y);
                         let perp_dy = s1.x - s0.x;
                         let len = (perp_dx * perp_dx + perp_dy * perp_dy).sqrt().max(1e-9);
                         let (ndx, ndy) = (perp_dx / len, perp_dy / len);
-                        prims.push(Line::new(
-                            sp.x - ndx * TICK_HALF_LEN, sp.y - ndy * TICK_HALF_LEN,
-                            sp.x + ndx * TICK_HALF_LEN, sp.y + ndy * TICK_HALF_LEN,
-                        ).stroke_color(axis_color)
-                         .stroke_width(TICK_STROKE_WIDTH)
-                         .into());
+                        prims.push(
+                            Line::new(
+                                sp.x - ndx * TICK_HALF_LEN,
+                                sp.y - ndy * TICK_HALF_LEN,
+                                sp.x + ndx * TICK_HALF_LEN,
+                                sp.y + ndy * TICK_HALF_LEN,
+                            )
+                            .stroke_color(axis_color)
+                            .stroke_width(TICK_STROKE_WIDTH)
+                            .into(),
+                        );
 
                         let label = format_tick(tick_val, x_step);
-                        prims.push(Text::new(
-                            sp.x + ndy * LABEL_OFFSET,
-                            sp.y - ndx * LABEL_OFFSET,
-                            &label,
-                        ).font_size(TICK_LABEL_SIZE)
-                         .into());
+                        prims.push(
+                            Text::new(sp.x + ndy * LABEL_OFFSET, sp.y - ndx * LABEL_OFFSET, &label)
+                                .font_size(TICK_LABEL_SIZE)
+                                .into(),
+                        );
                     }
                 }
 
                 // Axis name label at the end of the axis
                 let label_pt_x = s1.x + (s1.x - s0.x).signum() * AXIS_LABEL_OFFSET;
                 let label_pt_y = s1.y + (s1.y - s0.y).signum() * AXIS_LABEL_OFFSET;
-                prims.push(Text::new(label_pt_x, label_pt_y, &self.x_label)
-                    .font_size(AXIS_LABEL_SIZE)
-                    .into());
+                prims.push(
+                    Text::new(label_pt_x, label_pt_y, &self.x_label)
+                        .font_size(AXIS_LABEL_SIZE)
+                        .into(),
+                );
             }
         }
 
         // --- Y AXIS ---
         {
-            let start = crate::dataviz::camera::Point3D { x: fx, y: fy, z: fz };
-            let end   = crate::dataviz::camera::Point3D { x: fx, y: y_end_y, z: fz };
+            let start = crate::dataviz::camera::Point3D {
+                x: fx,
+                y: fy,
+                z: fz,
+            };
+            let end = crate::dataviz::camera::Point3D {
+                x: fx,
+                y: y_end_y,
+                z: fz,
+            };
 
             if let (Some(s0), Some(s1)) = (
                 camera.project_to_screen(start, viewport),
                 camera.project_to_screen(end, viewport),
             ) {
-                prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
-                    .stroke_color(axis_color)
-                    .stroke_width(AXIS_STROKE_WIDTH)
-                    .into());
+                prims.push(
+                    Line::new(s0.x, s0.y, s1.x, s1.y)
+                        .stroke_color(axis_color)
+                        .stroke_width(AXIS_STROKE_WIDTH)
+                        .into(),
+                );
 
                 let y_ticks = generate_ticks(y_data_min, y_data_max, N_TICKS);
-                let y_step = if y_ticks.len() >= 2 { y_ticks[1] - y_ticks[0] } else { 1.0 };
+                let y_step = if y_ticks.len() >= 2 {
+                    y_ticks[1] - y_ticks[0]
+                } else {
+                    1.0
+                };
                 for &tick_val in &y_ticks {
                     let t = if (y_data_max - y_data_min).abs() < 1e-12 {
                         0.0
@@ -883,53 +1030,77 @@ impl SurfacePlot {
                         (tick_val - y_data_min) / (y_data_max - y_data_min) * 2.0 - 1.0
                     };
                     let wy = fy + (y_end_y - fy) * (t + 1.0) / 2.0;
-                    let world_tick = crate::dataviz::camera::Point3D { x: fx, y: wy, z: fz };
+                    let world_tick = crate::dataviz::camera::Point3D {
+                        x: fx,
+                        y: wy,
+                        z: fz,
+                    };
                     if let Some(sp) = camera.project_to_screen(world_tick, viewport) {
                         let perp_dx = -(s1.y - s0.y);
                         let perp_dy = s1.x - s0.x;
                         let len = (perp_dx * perp_dx + perp_dy * perp_dy).sqrt().max(1e-9);
                         let (ndx, ndy) = (perp_dx / len, perp_dy / len);
-                        prims.push(Line::new(
-                            sp.x - ndx * TICK_HALF_LEN, sp.y - ndy * TICK_HALF_LEN,
-                            sp.x + ndx * TICK_HALF_LEN, sp.y + ndy * TICK_HALF_LEN,
-                        ).stroke_color(axis_color)
-                         .stroke_width(TICK_STROKE_WIDTH)
-                         .into());
+                        prims.push(
+                            Line::new(
+                                sp.x - ndx * TICK_HALF_LEN,
+                                sp.y - ndy * TICK_HALF_LEN,
+                                sp.x + ndx * TICK_HALF_LEN,
+                                sp.y + ndy * TICK_HALF_LEN,
+                            )
+                            .stroke_color(axis_color)
+                            .stroke_width(TICK_STROKE_WIDTH)
+                            .into(),
+                        );
 
                         let label = format_tick(tick_val, y_step);
-                        prims.push(Text::new(
-                            sp.x + ndy * LABEL_OFFSET,
-                            sp.y - ndx * LABEL_OFFSET,
-                            &label,
-                        ).font_size(TICK_LABEL_SIZE)
-                         .into());
+                        prims.push(
+                            Text::new(sp.x + ndy * LABEL_OFFSET, sp.y - ndx * LABEL_OFFSET, &label)
+                                .font_size(TICK_LABEL_SIZE)
+                                .into(),
+                        );
                     }
                 }
 
                 let label_pt_x = s1.x + (s1.x - s0.x).signum() * AXIS_LABEL_OFFSET;
                 let label_pt_y = s1.y + (s1.y - s0.y).signum() * AXIS_LABEL_OFFSET;
-                prims.push(Text::new(label_pt_x, label_pt_y, &self.y_label)
-                    .font_size(AXIS_LABEL_SIZE)
-                    .into());
+                prims.push(
+                    Text::new(label_pt_x, label_pt_y, &self.y_label)
+                        .font_size(AXIS_LABEL_SIZE)
+                        .into(),
+                );
             }
         }
 
         // --- Z AXIS (vertical) ---
         {
-            let start = crate::dataviz::camera::Point3D { x: fx, y: fy, z: fz };
-            let end   = crate::dataviz::camera::Point3D { x: fx, y: fy, z: top_z };
+            let start = crate::dataviz::camera::Point3D {
+                x: fx,
+                y: fy,
+                z: fz,
+            };
+            let end = crate::dataviz::camera::Point3D {
+                x: fx,
+                y: fy,
+                z: top_z,
+            };
 
             if let (Some(s0), Some(s1)) = (
                 camera.project_to_screen(start, viewport),
                 camera.project_to_screen(end, viewport),
             ) {
-                prims.push(Line::new(s0.x, s0.y, s1.x, s1.y)
-                    .stroke_color(axis_color)
-                    .stroke_width(AXIS_STROKE_WIDTH)
-                    .into());
+                prims.push(
+                    Line::new(s0.x, s0.y, s1.x, s1.y)
+                        .stroke_color(axis_color)
+                        .stroke_width(AXIS_STROKE_WIDTH)
+                        .into(),
+                );
 
                 let z_ticks = generate_ticks(z_data_min, z_data_max, N_TICKS);
-                let z_step = if z_ticks.len() >= 2 { z_ticks[1] - z_ticks[0] } else { 1.0 };
+                let z_step = if z_ticks.len() >= 2 {
+                    z_ticks[1] - z_ticks[0]
+                } else {
+                    1.0
+                };
                 for &tick_val in &z_ticks {
                     let t = if (z_data_max - z_data_min).abs() < 1e-12 {
                         0.0
@@ -937,27 +1108,39 @@ impl SurfacePlot {
                         (tick_val - z_data_min) / (z_data_max - z_data_min) * 2.0 - 1.0
                     };
                     let wz = fz + (top_z - fz) * (t + 1.0) / 2.0;
-                    let world_tick = crate::dataviz::camera::Point3D { x: fx, y: fy, z: wz };
+                    let world_tick = crate::dataviz::camera::Point3D {
+                        x: fx,
+                        y: fy,
+                        z: wz,
+                    };
                     if let Some(sp) = camera.project_to_screen(world_tick, viewport) {
                         // Z axis tick: horizontal tick mark
-                        prims.push(Line::new(
-                            sp.x - TICK_HALF_LEN, sp.y,
-                            sp.x + TICK_HALF_LEN, sp.y,
-                        ).stroke_color(axis_color)
-                         .stroke_width(TICK_STROKE_WIDTH)
-                         .into());
+                        prims.push(
+                            Line::new(sp.x - TICK_HALF_LEN, sp.y, sp.x + TICK_HALF_LEN, sp.y)
+                                .stroke_color(axis_color)
+                                .stroke_width(TICK_STROKE_WIDTH)
+                                .into(),
+                        );
 
                         let label = format_tick(tick_val, z_step);
-                        prims.push(Text::new(sp.x - LABEL_OFFSET, sp.y, &label)
-                            .font_size(TICK_LABEL_SIZE)
-                            .into());
+                        prims.push(
+                            Text::new(sp.x - LABEL_OFFSET, sp.y, &label)
+                                .font_size(TICK_LABEL_SIZE)
+                                .into(),
+                        );
                     }
                 }
 
                 // Z axis label at top
-                prims.push(Text::new(s1.x - AXIS_LABEL_OFFSET, s1.y - AXIS_LABEL_OFFSET, &self.z_label)
+                prims.push(
+                    Text::new(
+                        s1.x - AXIS_LABEL_OFFSET,
+                        s1.y - AXIS_LABEL_OFFSET,
+                        &self.z_label,
+                    )
                     .font_size(AXIS_LABEL_SIZE)
-                    .into());
+                    .into(),
+                );
             }
         }
 
@@ -976,10 +1159,10 @@ fn far_floor_corner(azimuth_deg: f64) -> (f64, f64) {
     // Normalize to [0, 360)
     let az = ((azimuth_deg % 360.0) + 360.0) % 360.0;
     match az as u32 {
-        0..=89   => (-1.0, -1.0), // Q1: camera near +Y, +X → far corner is (-X, -Y)
-        90..=179 => ( 1.0, -1.0), // Q2: camera near +Y, -X → far corner is (+X, -Y)
-        180..=269 => ( 1.0,  1.0), // Q3: camera near -Y, -X → far corner is (+X, +Y)
-        _        => (-1.0,  1.0), // Q4: camera near -Y, +X → far corner is (-X, +Y)
+        0..=89 => (-1.0, -1.0),  // Q1: camera near +Y, +X → far corner is (-X, -Y)
+        90..=179 => (1.0, -1.0), // Q2: camera near +Y, -X → far corner is (+X, -Y)
+        180..=269 => (1.0, 1.0), // Q3: camera near -Y, -X → far corner is (+X, +Y)
+        _ => (-1.0, 1.0),        // Q4: camera near -Y, +X → far corner is (-X, +Y)
     }
 }
 
@@ -1049,8 +1232,16 @@ mod tests {
         let plot = SurfacePlot::new(xs, ys, zs, 1, 3);
         let p_min = plot.world_point(0, 0);
         let p_max = plot.world_point(0, 2);
-        assert!((p_min.x - (-1.0)).abs() < 1e-10, "x_min should normalize to -1; got {}", p_min.x);
-        assert!((p_max.x - 1.0).abs() < 1e-10, "x_max should normalize to +1; got {}", p_max.x);
+        assert!(
+            (p_min.x - (-1.0)).abs() < 1e-10,
+            "x_min should normalize to -1; got {}",
+            p_min.x
+        );
+        assert!(
+            (p_max.x - 1.0).abs() < 1e-10,
+            "x_max should normalize to +1; got {}",
+            p_max.x
+        );
     }
 
     #[test]
@@ -1062,8 +1253,16 @@ mod tests {
         let plot = SurfacePlot::new(xs, ys, zs, 1, 2);
         let p0 = plot.world_point(0, 0);
         let p1 = plot.world_point(0, 1);
-        assert!((p0.z - (-1.0)).abs() < 1e-10, "z_min should normalize to -1; got {}", p0.z);
-        assert!((p1.z - 1.0).abs() < 1e-10, "z_max should normalize to +1; got {}", p1.z);
+        assert!(
+            (p0.z - (-1.0)).abs() < 1e-10,
+            "z_min should normalize to -1; got {}",
+            p0.z
+        );
+        assert!(
+            (p1.z - 1.0).abs() < 1e-10,
+            "z_max should normalize to +1; got {}",
+            p1.z
+        );
     }
 
     #[test]
@@ -1076,8 +1275,13 @@ mod tests {
         for r in 0..2 {
             for c in 0..2 {
                 let p = plot.world_point(r, c);
-                assert!((p.z - 0.0).abs() < 1e-10,
-                    "flat surface z should normalize to 0.0; got {} at ({},{})", p.z, r, c);
+                assert!(
+                    (p.z - 0.0).abs() < 1e-10,
+                    "flat surface z should normalize to 0.0; got {} at ({},{})",
+                    p.z,
+                    r,
+                    c
+                );
             }
         }
     }
@@ -1122,8 +1326,8 @@ mod tests {
 
     #[test]
     fn builder_sets_x_label() {
-        let plot = SurfacePlot::new(vec![0.0, 1.0], vec![0.0, 0.0], vec![0.0, 1.0], 1, 2)
-            .x_label("Time");
+        let plot =
+            SurfacePlot::new(vec![0.0, 1.0], vec![0.0, 0.0], vec![0.0, 1.0], 1, 2).x_label("Time");
         assert_eq!(plot.x_label_value(), "Time");
     }
 
@@ -1141,8 +1345,16 @@ mod tests {
         let zs = vec![0.0, 0.0];
         let plot = SurfacePlot::new(xs, ys, zs, 1, 2);
         let (x_min, x_max, _, _, _, _) = plot.data_extents();
-        assert!((x_min - 0.0).abs() < 1e-10, "x_min should be 0.0; got {}", x_min);
-        assert!((x_max - 10.0).abs() < 1e-10, "x_max should be 10.0; got {}", x_max);
+        assert!(
+            (x_min - 0.0).abs() < 1e-10,
+            "x_min should be 0.0; got {}",
+            x_min
+        );
+        assert!(
+            (x_max - 10.0).abs() < 1e-10,
+            "x_max should be 10.0; got {}",
+            x_max
+        );
     }
 
     // --- to_primitives() tests ---
@@ -1154,7 +1366,8 @@ mod tests {
             vec![0.0, 1.0, 0.0, 1.0],
             vec![0.0, 0.0, 1.0, 1.0],
             vec![0.0, 0.0, 0.0, 0.0], // flat: all z=0 → degenerate z normalized to 0.0
-            2, 2,
+            2,
+            2,
         )
     }
 
@@ -1164,7 +1377,10 @@ mod tests {
         let plot = make_2x2_plot();
         let camera = Camera::new(45.0, 30.0, 3.0);
         let result = plot.to_primitives(&camera, (800, 600));
-        assert!(!result.is_empty(), "shaded 2x2 plot should produce at least one primitive");
+        assert!(
+            !result.is_empty(),
+            "shaded 2x2 plot should produce at least one primitive"
+        );
     }
 
     #[test]
@@ -1181,7 +1397,8 @@ mod tests {
         assert!(
             result_below.len() < result_above.len(),
             "camera from below should see fewer faces ({}); camera above sees {}",
-            result_below.len(), result_above.len()
+            result_below.len(),
+            result_above.len()
         );
     }
 
@@ -1190,11 +1407,20 @@ mod tests {
         let plot = make_2x2_plot().render_mode(RenderMode::Wireframe);
         let camera = Camera::new(45.0, 30.0, 3.0);
         let result = plot.to_primitives(&camera, (800, 600));
-        assert!(!result.is_empty(), "wireframe 2x2 plot should produce at least one primitive");
+        assert!(
+            !result.is_empty(),
+            "wireframe 2x2 plot should produce at least one primitive"
+        );
         // Face primitives should be Bezier paths; axes add Line and Text on top — verify at least
         // one Bezier exists (the wireframe face)
-        let bezier_count = result.iter().filter(|p| matches!(p, Primitive::Bezier(_))).count();
-        assert!(bezier_count >= 1, "wireframe mode should produce at least one Bezier face primitive");
+        let bezier_count = result
+            .iter()
+            .filter(|p| matches!(p, Primitive::Bezier(_)))
+            .count();
+        assert!(
+            bezier_count >= 1,
+            "wireframe mode should produce at least one Bezier face primitive"
+        );
     }
 
     #[test]
@@ -1205,7 +1431,10 @@ mod tests {
         let plot = make_2x2_plot();
         let camera = Camera::new(0.0, 89.0, 3.0);
         let result = plot.to_primitives(&camera, (800, 600));
-        let bezier_count = result.iter().filter(|p| matches!(p, Primitive::Bezier(_))).count();
+        let bezier_count = result
+            .iter()
+            .filter(|p| matches!(p, Primitive::Bezier(_)))
+            .count();
         assert_eq!(
             bezier_count, 1,
             "2x2 grid should produce exactly 1 Bezier face primitive from top-facing camera; got {}",
@@ -1288,7 +1517,10 @@ mod tests {
     fn far_floor_corner_wraps_at_360() {
         let at_0 = far_floor_corner(0.0);
         let at_360 = far_floor_corner(360.0);
-        assert_eq!(at_0, at_360, "far_floor_corner(360) should equal far_floor_corner(0)");
+        assert_eq!(
+            at_0, at_360,
+            "far_floor_corner(360) should equal far_floor_corner(0)"
+        );
     }
 
     #[test]
@@ -1298,7 +1530,8 @@ mod tests {
             vec![0.0, 10.0, 0.0, 10.0],
             vec![0.0, 0.0, 10.0, 10.0],
             vec![0.0, 0.0, 0.0, 0.0], // flat z=0
-            2, 2,
+            2,
+            2,
         );
         let camera = Camera::new(45.0, 30.0, 3.0);
         let viewport = (800u32, 600u32);
@@ -1314,7 +1547,10 @@ mod tests {
             total.len()
         );
         // Verify that non-Bezier primitives exist (axis lines and tick labels)
-        let non_bezier_count = total.iter().filter(|p| !matches!(p, Primitive::Bezier(_))).count();
+        let non_bezier_count = total
+            .iter()
+            .filter(|p| !matches!(p, Primitive::Bezier(_)))
+            .count();
         assert!(
             non_bezier_count > 0,
             "axes should produce Line and Text primitives; got {} non-Bezier primitives",
@@ -1334,52 +1570,73 @@ mod tests {
 
     #[test]
     fn z_at_no_animations_returns_fitted_z() {
-        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
+        let xs = vec![0.0, 1.0];
+        let ys = vec![0.0, 0.0];
+        let zs = vec![0.0, 10.0];
         let plot2 = SurfacePlot::new(xs, ys, zs, 1, 2);
         // fitted_zs[1] should be 1.0 (normalized max) — z_at returns it unchanged
-        assert!((plot2.z_at(1.0, 0.0) - 1.0).abs() < 1e-10,
-            "no animations: z_at should return fitted_z unchanged");
+        assert!(
+            (plot2.z_at(1.0, 0.0) - 1.0).abs() < 1e-10,
+            "no animations: z_at should return fitted_z unchanged"
+        );
     }
 
     #[test]
     fn z_at_before_animation_returns_zero() {
-        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
-        let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
-            .animate_fit(5.0, 3.0, Easing::Linear);
+        let xs = vec![0.0, 1.0];
+        let ys = vec![0.0, 0.0];
+        let zs = vec![0.0, 10.0];
+        let plot = SurfacePlot::new(xs, ys, zs, 1, 2).animate_fit(5.0, 3.0, Easing::Linear);
         // t=0 is before the animation (starts at 5.0) → should return 0.0 (flat)
-        assert!((plot.z_at(1.0, 0.0) - 0.0).abs() < 1e-10,
-            "before animation: z_at should return 0.0 (flat)");
+        assert!(
+            (plot.z_at(1.0, 0.0) - 0.0).abs() < 1e-10,
+            "before animation: z_at should return 0.0 (flat)"
+        );
     }
 
     #[test]
     fn z_at_after_animation_returns_fitted_z() {
-        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
-        let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
-            .animate_fit(0.0, 3.0, Easing::Linear);
+        let xs = vec![0.0, 1.0];
+        let ys = vec![0.0, 0.0];
+        let zs = vec![0.0, 10.0];
+        let plot = SurfacePlot::new(xs, ys, zs, 1, 2).animate_fit(0.0, 3.0, Easing::Linear);
         // t=5.0 is after animation end (3.0) → hold-last at fitted_z
-        assert!((plot.z_at(1.0, 5.0) - 1.0).abs() < 1e-10,
-            "after animation: z_at should return fitted_z (1.0)");
+        assert!(
+            (plot.z_at(1.0, 5.0) - 1.0).abs() < 1e-10,
+            "after animation: z_at should return fitted_z (1.0)"
+        );
     }
 
     #[test]
     fn z_at_midpoint_linear_is_half_fitted_z() {
-        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
-        let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
-            .animate_fit(0.0, 4.0, Easing::Linear);
+        let xs = vec![0.0, 1.0];
+        let ys = vec![0.0, 0.0];
+        let zs = vec![0.0, 10.0];
+        let plot = SurfacePlot::new(xs, ys, zs, 1, 2).animate_fit(0.0, 4.0, Easing::Linear);
         // At t=2.0 (50% through 4.0s linear): z = 0.5 * fitted_z = 0.5
         let z = plot.z_at(1.0, 2.0);
-        assert!((z - 0.5).abs() < 1e-9, "linear midpoint should be 0.5; got {}", z);
+        assert!(
+            (z - 0.5).abs() < 1e-9,
+            "linear midpoint should be 0.5; got {}",
+            z
+        );
     }
 
     #[test]
     fn z_at_between_two_ranges_holds_at_fitted_z() {
-        let xs = vec![0.0, 1.0]; let ys = vec![0.0, 0.0]; let zs = vec![0.0, 10.0];
+        let xs = vec![0.0, 1.0];
+        let ys = vec![0.0, 0.0];
+        let zs = vec![0.0, 10.0];
         let plot = SurfacePlot::new(xs, ys, zs, 1, 2)
-            .animate_fit(0.0, 2.0, Easing::Linear)  // ends at t=2.0
-            .animate_fit(5.0, 2.0, Easing::Linear);  // starts at t=5.0
-        // At t=3.5 (between the two ranges): hold at fitted_z
+            .animate_fit(0.0, 2.0, Easing::Linear) // ends at t=2.0
+            .animate_fit(5.0, 2.0, Easing::Linear); // starts at t=5.0
+                                                    // At t=3.5 (between the two ranges): hold at fitted_z
         let z = plot.z_at(1.0, 3.5);
-        assert!((z - 1.0).abs() < 1e-10, "between ranges: z should hold at fitted_z (1.0); got {}", z);
+        assert!(
+            (z - 1.0).abs() < 1e-10,
+            "between ranges: z should hold at fitted_z (1.0); got {}",
+            z
+        );
     }
 
     #[test]
@@ -1390,13 +1647,19 @@ mod tests {
         let xs = vec![0.0, 1.0, 0.0, 1.0];
         let ys = vec![0.0, 0.0, 1.0, 1.0];
         let zs = vec![0.0, 10.0, 0.0, 10.0];
-        let plot = SurfacePlot::new(xs.clone(), ys.clone(), zs.clone(), 2, 2)
-            .animate_fit(5.0, 3.0, Easing::Linear);
+        let plot = SurfacePlot::new(xs.clone(), ys.clone(), zs.clone(), 2, 2).animate_fit(
+            5.0,
+            3.0,
+            Easing::Linear,
+        );
         let camera = Camera::new(45.0, 30.0, 3.0);
         // to_primitives_at at t=0 should produce same output as a fully flat surface
         let anim_result = plot.to_primitives_at(&camera, (800, 600), 0.0);
         // Should have primitives (face + axes) — just verify it doesn't panic and produces output
-        assert!(!anim_result.is_empty(), "to_primitives_at at t=0 should produce primitives");
+        assert!(
+            !anim_result.is_empty(),
+            "to_primitives_at at t=0 should produce primitives"
+        );
     }
 
     #[test]
@@ -1415,49 +1678,68 @@ mod tests {
     #[test]
     fn camera_at_no_animations_returns_none() {
         let plot = make_2x2_plot();
-        assert!(plot.camera_at(0.0).is_none(), "no camera animations: camera_at should return None");
+        assert!(
+            plot.camera_at(0.0).is_none(),
+            "no camera animations: camera_at should return None"
+        );
     }
 
     #[test]
     fn camera_at_before_animation_holds_start_angle() {
-        let plot = make_2x2_plot()
-            .animate_camera_azimuth(5.0, 3.0, 45.0, 135.0, Easing::Linear);
+        let plot = make_2x2_plot().animate_camera_azimuth(5.0, 3.0, 45.0, 135.0, Easing::Linear);
         let az = plot.camera_at(0.0).expect("should be Some");
-        assert!((az - 45.0).abs() < 1e-9, "before animation: should hold start_angle=45°; got {}", az);
+        assert!(
+            (az - 45.0).abs() < 1e-9,
+            "before animation: should hold start_angle=45°; got {}",
+            az
+        );
     }
 
     #[test]
     fn camera_at_after_animation_holds_end_angle() {
-        let plot = make_2x2_plot()
-            .animate_camera_azimuth(0.0, 3.0, 45.0, 135.0, Easing::Linear);
+        let plot = make_2x2_plot().animate_camera_azimuth(0.0, 3.0, 45.0, 135.0, Easing::Linear);
         let az = plot.camera_at(10.0).expect("should be Some");
-        assert!((az - 135.0).abs() < 1e-9, "after animation: should hold end_angle=135°; got {}", az);
+        assert!(
+            (az - 135.0).abs() < 1e-9,
+            "after animation: should hold end_angle=135°; got {}",
+            az
+        );
     }
 
     #[test]
     fn camera_at_midpoint_linear_is_midpoint_angle() {
-        let plot = make_2x2_plot()
-            .animate_camera_azimuth(0.0, 4.0, 0.0, 180.0, Easing::Linear);
+        let plot = make_2x2_plot().animate_camera_azimuth(0.0, 4.0, 0.0, 180.0, Easing::Linear);
         let az = plot.camera_at(2.0).expect("should be Some");
-        assert!((az - 90.0).abs() < 1e-9, "linear midpoint: azimuth should be 90°; got {}", az);
+        assert!(
+            (az - 90.0).abs() < 1e-9,
+            "linear midpoint: azimuth should be 90°; got {}",
+            az
+        );
     }
 
     #[test]
     fn camera_at_between_ranges_holds_end_angle_of_previous() {
         let plot = make_2x2_plot()
-            .animate_camera_azimuth(0.0, 2.0, 0.0, 90.0, Easing::Linear)   // ends at t=2.0 → 90°
+            .animate_camera_azimuth(0.0, 2.0, 0.0, 90.0, Easing::Linear) // ends at t=2.0 → 90°
             .animate_camera_azimuth(5.0, 2.0, 90.0, 180.0, Easing::Linear); // starts at t=5.0
-        // At t=3.5 (between ranges): hold at 90° (end of first range)
+                                                                            // At t=3.5 (between ranges): hold at 90° (end of first range)
         let az = plot.camera_at(3.5).expect("should be Some");
-        assert!((az - 90.0).abs() < 1e-9, "between ranges: azimuth should be 90°; got {}", az);
+        assert!(
+            (az - 90.0).abs() < 1e-9,
+            "between ranges: azimuth should be 90°; got {}",
+            az
+        );
     }
 
     #[test]
     fn camera_at_cross_360_sweep_works() {
         // Sweep from 350° to 370° — should interpolate to 360° at midpoint, Camera::new handles trig
-        let plot = make_2x2_plot()
-            .animate_camera_azimuth(0.0, 2.0, 350.0, 370.0, Easing::Linear);
+        let plot = make_2x2_plot().animate_camera_azimuth(0.0, 2.0, 350.0, 370.0, Easing::Linear);
         let az = plot.camera_at(1.0).expect("should be Some");
-        assert!((az - 360.0).abs() < 1e-9, "cross-360 midpoint: azimuth should be 360°; got {}", az);
+        assert!(
+            (az - 360.0).abs() < 1e-9,
+            "cross-360 midpoint: azimuth should be 360°; got {}",
+            az
+        );
     }
 }

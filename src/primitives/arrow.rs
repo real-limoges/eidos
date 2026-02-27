@@ -65,12 +65,7 @@ impl Arrow {
     ///
     /// IMPORTANT: `svg_gen` MUST add the Definitions to the document BEFORE the Line,
     /// otherwise the `url(#marker-id)` reference in `marker-end` will be unresolved.
-    pub fn to_svg_parts(
-        &self,
-    ) -> (
-        svg::node::element::Definitions,
-        svg::node::element::Line,
-    ) {
+    pub fn to_svg_parts(&self) -> (svg::node::element::Definitions, svg::node::element::Line) {
         use svg::node::element::path::Data;
         use svg::node::element::{Definitions, Line as SvgLine, Marker, Path as SvgPath};
 
@@ -141,8 +136,7 @@ mod tests {
 
     #[test]
     fn arrow_to_svg_parts_returns_defs_and_line() {
-        let arrow = Arrow::new(0.0, 0.0, 100.0, 100.0)
-            .stroke_color(Color::RED);
+        let arrow = Arrow::new(0.0, 0.0, 100.0, 100.0).stroke_color(Color::RED);
         let (_defs, _line) = arrow.to_svg_parts();
         // Compilation of this call confirms the return type is (Definitions, Line)
     }

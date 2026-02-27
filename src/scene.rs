@@ -1,6 +1,6 @@
 // src/scene.rs
-use std::sync::Arc;
 use crate::EidosError;
+use std::sync::Arc;
 
 pub struct Scene {
     width: u32,
@@ -12,7 +12,7 @@ pub struct Scene {
 
 /// Accumulates primitives during the render closure call.
 pub struct SceneBuilder {
-    primitives:  Vec<crate::primitives::Primitive>,
+    primitives: Vec<crate::primitives::Primitive>,
     /// Depth (depth_sq) parallel to `primitives` — one entry per primitive.
     /// Non-surface primitives (axes, labels) use f64::NEG_INFINITY so they always
     /// render on top (painter's algorithm — NEG_INFINITY is "nearest").
@@ -128,7 +128,8 @@ impl SceneBuilder {
         viewport: (u32, u32),
         t_secs: f64,
     ) -> &mut Self {
-        let depth_circles = scatter.to_depth_sorted_circles_at(camera, viewport, &self.face_depths, t_secs);
+        let depth_circles =
+            scatter.to_depth_sorted_circles_at(camera, viewport, &self.face_depths, t_secs);
         self.merge_scatter(depth_circles);
         self
     }
@@ -188,8 +189,8 @@ impl SceneBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::dataviz::{SurfacePlot, Camera};
     use crate::animation::Easing;
+    use crate::dataviz::{Camera, SurfacePlot};
 
     #[test]
     fn add_surface_adds_primitives_to_builder() {
@@ -198,12 +199,20 @@ mod tests {
             vec![0.0, 1.0, 0.0, 1.0],
             vec![0.0, 0.0, 1.0, 1.0],
             vec![0.0, 0.0, 0.0, 0.0],
-            2, 2,
+            2,
+            2,
         );
         let camera = Camera::new(45.0, 30.0, 3.0);
-        let mut sb = SceneBuilder { primitives: vec![], prim_depths: vec![], face_depths: vec![] };
+        let mut sb = SceneBuilder {
+            primitives: vec![],
+            prim_depths: vec![],
+            face_depths: vec![],
+        };
         sb.add_surface(&plot, &camera, (800, 600));
-        assert!(!sb.primitives.is_empty(), "add_surface should produce at least one primitive");
+        assert!(
+            !sb.primitives.is_empty(),
+            "add_surface should produce at least one primitive"
+        );
     }
 
     #[test]
@@ -213,12 +222,21 @@ mod tests {
             vec![0.0, 1.0, 0.0, 1.0],
             vec![0.0, 0.0, 1.0, 1.0],
             vec![0.0, 0.0, 0.0, 0.0],
-            2, 2,
-        ).animate_fit(0.0, 3.0, Easing::Linear);
+            2,
+            2,
+        )
+        .animate_fit(0.0, 3.0, Easing::Linear);
         let camera = Camera::new(45.0, 30.0, 3.0);
-        let mut sb = SceneBuilder { primitives: vec![], prim_depths: vec![], face_depths: vec![] };
+        let mut sb = SceneBuilder {
+            primitives: vec![],
+            prim_depths: vec![],
+            face_depths: vec![],
+        };
         sb.add_surface_at(&plot, &camera, (800, 600), 1.5);
-        assert!(!sb.primitives.is_empty(), "add_surface_at should produce primitives");
+        assert!(
+            !sb.primitives.is_empty(),
+            "add_surface_at should produce primitives"
+        );
     }
 }
 
@@ -311,7 +329,11 @@ impl Scene {
         crate::svg_gen::encode_to_mp4_animated(
             |frame_idx| {
                 let t_secs = frame_idx as f64 / fps as f64;
-                let mut builder = SceneBuilder { primitives: Vec::new(), prim_depths: Vec::new(), face_depths: Vec::new() };
+                let mut builder = SceneBuilder {
+                    primitives: Vec::new(),
+                    prim_depths: Vec::new(),
+                    face_depths: Vec::new(),
+                };
                 build_scene(&mut builder, t_secs);
                 let svg = crate::svg_gen::build_svg_document(width, height, &builder.primitives);
                 crate::svg_gen::rasterize_frame(&svg, width, height, &fontdb)

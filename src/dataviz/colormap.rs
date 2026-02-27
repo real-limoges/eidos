@@ -299,9 +299,22 @@ mod tests {
     fn viridis_at_zero_is_purple() {
         let c = viridis_color(0.0);
         // Deep purple: red is low, blue is dominant over green
-        assert!(c.r < 100, "t=0.0 should have low red (purple); got r={}", c.r);
-        assert!(c.b > c.g, "t=0.0 should have blue > green (purple hue); got b={}, g={}", c.b, c.g);
-        assert!(c.b > 50, "t=0.0 should have meaningful blue component (purple); got b={}", c.b);
+        assert!(
+            c.r < 100,
+            "t=0.0 should have low red (purple); got r={}",
+            c.r
+        );
+        assert!(
+            c.b > c.g,
+            "t=0.0 should have blue > green (purple hue); got b={}, g={}",
+            c.b,
+            c.g
+        );
+        assert!(
+            c.b > 50,
+            "t=0.0 should have meaningful blue component (purple); got b={}",
+            c.b
+        );
     }
 
     #[test]
@@ -309,23 +322,41 @@ mod tests {
         let c = viridis_color(1.0);
         // Bright yellow: high red, high green, low blue
         // Canonical endpoint (0.993248, 0.906157, 0.143936) → u8 (253, 231, 37)
-        assert!(c.r > 200, "t=1.0 should have high red (yellow); got r={}", c.r);
-        assert!(c.g > 200, "t=1.0 should have high green (yellow); got g={}", c.g);
-        assert!(c.b < 100, "t=1.0 should have low blue (yellow); got b={}", c.b);
+        assert!(
+            c.r > 200,
+            "t=1.0 should have high red (yellow); got r={}",
+            c.r
+        );
+        assert!(
+            c.g > 200,
+            "t=1.0 should have high green (yellow); got g={}",
+            c.g
+        );
+        assert!(
+            c.b < 100,
+            "t=1.0 should have low blue (yellow); got b={}",
+            c.b
+        );
     }
 
     #[test]
     fn viridis_clamps_below_zero() {
         let below = viridis_color(-1.0);
         let zero = viridis_color(0.0);
-        assert_eq!(below, zero, "viridis_color(-1.0) should equal viridis_color(0.0)");
+        assert_eq!(
+            below, zero,
+            "viridis_color(-1.0) should equal viridis_color(0.0)"
+        );
     }
 
     #[test]
     fn viridis_clamps_above_one() {
         let above = viridis_color(2.0);
         let one = viridis_color(1.0);
-        assert_eq!(above, one, "viridis_color(2.0) should equal viridis_color(1.0)");
+        assert_eq!(
+            above, one,
+            "viridis_color(2.0) should equal viridis_color(1.0)"
+        );
     }
 
     #[test]
@@ -336,7 +367,9 @@ mod tests {
         assert!(
             c.g > c.r,
             "viridis midpoint should be teal-green (g > r); got r={}, g={}, b={}",
-            c.r, c.g, c.b
+            c.r,
+            c.g,
+            c.b
         );
     }
 }

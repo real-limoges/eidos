@@ -1,14 +1,14 @@
 // src/dataviz/spline_fit.rs
 
-use crate::{Color, EidosError, Easing, Tween};
-use crate::primitives::Bezier;
 use crate::dataviz::spline::catmull_rom_segment_to_bezier;
+use crate::primitives::Bezier;
+use crate::{Color, Easing, EidosError, Tween};
 
 /// Internal animation config stored by animate_fit().
 struct FitAnimation {
     start_time: f64,
-    duration:   f64,
-    easing:     Easing,
+    duration: f64,
+    easing: Easing,
 }
 
 /// A spline curve that animates from invisible to its final fitted shape.
@@ -42,8 +42,8 @@ impl Clone for FitAnimation {
     fn clone(&self) -> Self {
         FitAnimation {
             start_time: self.start_time,
-            duration:   self.duration,
-            easing:     self.easing,
+            duration: self.duration,
+            easing: self.easing,
         }
     }
 }
@@ -85,7 +85,11 @@ impl SplineFit {
     /// - `duration`: animation duration in seconds.
     /// - `easing`: easing function for the reveal.
     pub fn animate_fit(mut self, start_time: f64, duration: f64, easing: Easing) -> Self {
-        self.animation = Some(FitAnimation { start_time, duration, easing });
+        self.animation = Some(FitAnimation {
+            start_time,
+            duration,
+            easing,
+        });
         self
     }
 
@@ -113,10 +117,10 @@ impl SplineFit {
             Some(anim) => {
                 let tween = Tween {
                     start: 0.0_f64,
-                    end:   1.0_f64,
+                    end: 1.0_f64,
                     start_time: anim.start_time,
-                    duration:   anim.duration,
-                    easing:     anim.easing,
+                    duration: anim.duration,
+                    easing: anim.easing,
                 };
                 tween.value_at(t_secs)
             }
@@ -149,14 +153,16 @@ impl SplineFit {
             let p0 = if i == 0 { morphed[0] } else { morphed[i - 1] };
             let p1 = morphed[i];
             let p2 = morphed[i + 1];
-            let p3 = if i + 2 >= n { morphed[n - 1] } else { morphed[i + 2] };
+            let p3 = if i + 2 >= n {
+                morphed[n - 1]
+            } else {
+                morphed[i + 2]
+            };
             let (cp1, cp2, end) = catmull_rom_segment_to_bezier(p0, p1, p2, p3);
             bez = bez.cubic_to(cp1.0, cp1.1, cp2.0, cp2.1, end.0, end.1);
         }
 
-        Some(
-            bez.stroke(self.stroke_color, self.stroke_width),
-        )
+        Some(bez.stroke(self.stroke_color, self.stroke_width))
     }
 }
 
@@ -187,7 +193,10 @@ mod tests {
         let result = sf.to_bezier(visual_pts, 0.0);
         assert!(result.is_some(), "Expected Some at t=0 without animation");
         let result_late = sf.to_bezier(visual_pts, 1000.0);
-        assert!(result_late.is_some(), "Expected Some at large t without animation");
+        assert!(
+            result_late.is_some(),
+            "Expected Some at large t without animation"
+        );
     }
 
     #[test]
@@ -216,6 +225,9 @@ mod tests {
             .animate_fit(start, duration, Easing::Linear);
         let visual_pts = &[(0.0, 400.0), (400.0, 200.0), (800.0, 300.0)];
         let result = sf.to_bezier(visual_pts, start + duration);
-        assert!(result.is_some(), "Expected Some at t=duration (fully revealed)");
+        assert!(
+            result.is_some(),
+            "Expected Some at t=duration (fully revealed)"
+        );
     }
 }

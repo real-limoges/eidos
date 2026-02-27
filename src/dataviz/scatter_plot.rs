@@ -13,7 +13,7 @@ use crate::Color;
 /// Fade-in animation parameters for a scatter plot.
 struct ScatterAnimation {
     start_time: f64,
-    duration:   f64,
+    duration: f64,
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -41,10 +41,13 @@ const ALPHA_FLOOR: f64 = 0.03;
 /// ```
 pub struct ScatterPlot {
     points: Vec<(f64, f64, f64)>,
-    x_data_min: f64, x_data_max: f64,
-    y_data_min: f64, y_data_max: f64,
-    z_data_min: f64, z_data_max: f64,
-    color:  Color,
+    x_data_min: f64,
+    x_data_max: f64,
+    y_data_min: f64,
+    y_data_max: f64,
+    z_data_min: f64,
+    z_data_max: f64,
+    color: Color,
     radius: f64,
     fade_anim: Option<ScatterAnimation>,
 }
@@ -55,15 +58,22 @@ impl ScatterPlot {
     /// - `points`: raw `(x, y, z)` data coordinates (not pre-normalized)
     /// - `surface_extents`: the 6-tuple returned by `SurfacePlot::data_extents()`
     ///   `(x_min, x_max, y_min, y_max, z_min, z_max)` — defines the normalization range
-    pub fn new(points: Vec<(f64, f64, f64)>, surface_extents: (f64, f64, f64, f64, f64, f64)) -> Self {
-        let (x_data_min, x_data_max, y_data_min, y_data_max, z_data_min, z_data_max) = surface_extents;
+    pub fn new(
+        points: Vec<(f64, f64, f64)>,
+        surface_extents: (f64, f64, f64, f64, f64, f64),
+    ) -> Self {
+        let (x_data_min, x_data_max, y_data_min, y_data_max, z_data_min, z_data_max) =
+            surface_extents;
         ScatterPlot {
             points,
-            x_data_min, x_data_max,
-            y_data_min, y_data_max,
-            z_data_min, z_data_max,
-            color:  Color::rgb(255, 120, 50), // warm orange — visible against viridis colormap
-            radius: 4.5,                       // within 4–5px locked range
+            x_data_min,
+            x_data_max,
+            y_data_min,
+            y_data_max,
+            z_data_min,
+            z_data_max,
+            color: Color::rgb(255, 120, 50), // warm orange — visible against viridis colormap
+            radius: 4.5,                     // within 4–5px locked range
             fade_anim: None,
         }
     }
@@ -88,7 +98,7 @@ impl ScatterPlot {
     pub fn animate_fade(mut self, t_start: f64, t_end: f64) -> Self {
         self.fade_anim = Some(ScatterAnimation {
             start_time: t_start,
-            duration:   (t_end - t_start).max(0.0),
+            duration: (t_end - t_start).max(0.0),
         });
         self
     }
@@ -210,8 +220,14 @@ impl ScatterPlot {
         }
 
         // Pass 2: find min/max depth_sq across the visible set for normalization.
-        let min_depth_sq = projected.iter().map(|(d, _)| *d).fold(f64::INFINITY, f64::min);
-        let max_depth_sq = projected.iter().map(|(d, _)| *d).fold(f64::NEG_INFINITY, f64::max);
+        let min_depth_sq = projected
+            .iter()
+            .map(|(d, _)| *d)
+            .fold(f64::INFINITY, f64::min);
+        let max_depth_sq = projected
+            .iter()
+            .map(|(d, _)| *d)
+            .fold(f64::NEG_INFINITY, f64::max);
 
         // Pass 3: compute opacity for each point and build Circle primitives.
         projected

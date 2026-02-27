@@ -34,9 +34,8 @@ mod tests {
 
     #[test]
     fn catmull_rom_all_same_points_returns_same_point() {
-        let (cp1, cp2, end) = catmull_rom_segment_to_bezier(
-            (0.0, 0.0), (0.0, 0.0), (0.0, 0.0), (0.0, 0.0),
-        );
+        let (cp1, cp2, end) =
+            catmull_rom_segment_to_bezier((0.0, 0.0), (0.0, 0.0), (0.0, 0.0), (0.0, 0.0));
         assert!((cp1.0).abs() < 1e-10);
         assert!((cp1.1).abs() < 1e-10);
         assert!((cp2.0).abs() < 1e-10);
@@ -47,9 +46,8 @@ mod tests {
     #[test]
     fn catmull_rom_collinear_points_returns_endpoint() {
         // For perfectly linear points, endpoint is always p2
-        let (_, _, end) = catmull_rom_segment_to_bezier(
-            (0.0, 0.0), (1.0, 1.0), (2.0, 2.0), (3.0, 3.0),
-        );
+        let (_, _, end) =
+            catmull_rom_segment_to_bezier((0.0, 0.0), (1.0, 1.0), (2.0, 2.0), (3.0, 3.0));
         assert!((end.0 - 2.0).abs() < 1e-10);
         assert!((end.1 - 2.0).abs() < 1e-10);
     }

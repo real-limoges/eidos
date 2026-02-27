@@ -18,8 +18,8 @@ pub fn build_svg_document(
     height: u32,
     primitives: &[crate::primitives::Primitive],
 ) -> String {
-    use svg::Document;
     use svg::node::element::Rectangle;
+    use svg::Document;
 
     let mut doc = Document::new()
         .set("width", width)
@@ -76,8 +76,8 @@ pub fn rasterize_frame(
     height: u32,
     fontdb: &std::sync::Arc<resvg::usvg::fontdb::Database>,
 ) -> Result<Vec<u8>, EidosError> {
-    use resvg::usvg::{self, Options};
     use resvg::tiny_skia;
+    use resvg::usvg::{self, Options};
 
     let mut options = Options::default();
     options.fontdb = fontdb.clone();
@@ -88,7 +88,11 @@ pub fn rasterize_frame(
     let mut pixmap = tiny_skia::Pixmap::new(width, height)
         .ok_or_else(|| EidosError::RenderFailed("failed to allocate pixmap".into()))?;
 
-    resvg::render(&tree, tiny_skia::Transform::identity(), &mut pixmap.as_mut());
+    resvg::render(
+        &tree,
+        tiny_skia::Transform::identity(),
+        &mut pixmap.as_mut(),
+    );
 
     Ok(pixmap.data().to_vec()) // RGBA8 bytes (tiny-skia Pixmap::data() is RGBA, not BGRA)
 }
@@ -123,13 +127,20 @@ where
 
     let mut child = Command::new("ffmpeg")
         .args([
-            "-f", "rawvideo",
-            "-pix_fmt", "rgba",  // matches tiny-skia RGBA byte order (NOT bgra)
-            "-s", &format!("{}x{}", width, height),
-            "-r", &fps.to_string(),
-            "-i", "pipe:0",
-            "-pix_fmt", "yuv420p",
-            "-c:v", "libx264",
+            "-f",
+            "rawvideo",
+            "-pix_fmt",
+            "rgba", // matches tiny-skia RGBA byte order (NOT bgra)
+            "-s",
+            &format!("{}x{}", width, height),
+            "-r",
+            &fps.to_string(),
+            "-i",
+            "pipe:0",
+            "-pix_fmt",
+            "yuv420p",
+            "-c:v",
+            "libx264",
             "-y",
             output_str,
         ])

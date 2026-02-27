@@ -31,7 +31,11 @@ impl std::fmt::Debug for PathCommand {
             PathCommand::MoveTo(x, y) => write!(f, "MoveTo({}, {})", x, y),
             PathCommand::LineTo(x, y) => write!(f, "LineTo({}, {})", x, y),
             PathCommand::CubicTo(cx1, cy1, cx2, cy2, x, y) => {
-                write!(f, "CubicTo({}, {}, {}, {}, {}, {})", cx1, cy1, cx2, cy2, x, y)
+                write!(
+                    f,
+                    "CubicTo({}, {}, {}, {}, {}, {})",
+                    cx1, cy1, cx2, cy2, x, y
+                )
             }
             PathCommand::Close => write!(f, "Close"),
         }
@@ -124,9 +128,7 @@ impl Bezier {
             };
         }
 
-        let mut el = SvgPath::new()
-            .set("d", data)
-            .set("opacity", self.opacity);
+        let mut el = SvgPath::new().set("d", data).set("opacity", self.opacity);
 
         el = match self.fill {
             Some(c) => el.set("fill", c.to_hex()),
@@ -134,9 +136,7 @@ impl Bezier {
         };
 
         if let Some((color, width)) = self.stroke {
-            el = el
-                .set("stroke", color.to_hex())
-                .set("stroke-width", width);
+            el = el.set("stroke", color.to_hex()).set("stroke-width", width);
         }
 
         el

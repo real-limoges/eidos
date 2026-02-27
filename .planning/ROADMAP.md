@@ -108,4 +108,4 @@ Plans:
 | 9.1. v1.1 SUMMARY Schema and Doc Fixes | v1.1 | 1/1 | Complete | 2026-02-26 |
 | 10. Infallible Builders | 2/2 | Complete    | 2026-02-26 | - |
 | 11. State and Tween Ergonomics | 1/1 | Complete    | 2026-02-26 | - |
-| 12. Coordinate Mapping | 1/1 | Complete   | 2026-02-26 | - |
+| 12. Coordinate Mapping | 1/1 | Complete    | 2026-02-26 | - |

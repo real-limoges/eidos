@@ -1,8 +1,8 @@
 // src/dataviz/data_curve.rs
 
-use crate::{Color, EidosError};
-use crate::primitives::Bezier;
 use crate::dataviz::spline::catmull_rom_segment_to_bezier;
+use crate::primitives::Bezier;
+use crate::{Color, EidosError};
 
 /// A smooth data curve rendered as a cubic spline through the provided data points.
 ///
@@ -58,7 +58,10 @@ impl DataCurve {
     ///   p[-1] = p[0]  (first segment phantom)
     ///   p[n]  = p[n-1] (last segment phantom)
     pub fn to_bezier_path(&self, visual_points: &[(f64, f64)]) -> Bezier {
-        assert!(visual_points.len() >= 2, "to_bezier_path requires at least 2 points");
+        assert!(
+            visual_points.len() >= 2,
+            "to_bezier_path requires at least 2 points"
+        );
 
         let n = visual_points.len();
         let mut bez = Bezier::new().move_to(visual_points[0].0, visual_points[0].1);
@@ -67,10 +70,18 @@ impl DataCurve {
             // Phantom point duplication at boundaries:
             // p0 is the point before p1; phantom at start = p[0]
             // p3 is the point after p2; phantom at end = p[n-1]
-            let p0 = if i == 0 { visual_points[0] } else { visual_points[i - 1] };
+            let p0 = if i == 0 {
+                visual_points[0]
+            } else {
+                visual_points[i - 1]
+            };
             let p1 = visual_points[i];
             let p2 = visual_points[i + 1];
-            let p3 = if i + 2 >= n { visual_points[n - 1] } else { visual_points[i + 2] };
+            let p3 = if i + 2 >= n {
+                visual_points[n - 1]
+            } else {
+                visual_points[i + 2]
+            };
 
             let (cp1, cp2, end) = catmull_rom_segment_to_bezier(p0, p1, p2, p3);
             bez = bez.cubic_to(cp1.0, cp1.1, cp2.0, cp2.1, end.0, end.1);
@@ -78,7 +89,7 @@ impl DataCurve {
 
         // Apply stroke and opacity — builders are infallible (clamping semantics).
         bez.stroke(self.stroke_color, self.stroke_width)
-           .opacity(self.opacity)
+            .opacity(self.opacity)
     }
 }
 
@@ -116,9 +127,8 @@ mod tests {
     #[test]
     fn catmull_rom_interior_segment_produces_smooth_control_points() {
         // With p0=p1=p2=p3=(0,0), control points should all be (0,0)
-        let (cp1, cp2, end) = catmull_rom_segment_to_bezier(
-            (0.0, 0.0), (0.0, 0.0), (0.0, 0.0), (0.0, 0.0),
-        );
+        let (cp1, cp2, end) =
+            catmull_rom_segment_to_bezier((0.0, 0.0), (0.0, 0.0), (0.0, 0.0), (0.0, 0.0));
         assert!((cp1.0).abs() < 1e-10);
         assert!((cp2.0).abs() < 1e-10);
         assert_eq!(end, (0.0, 0.0));
@@ -138,7 +148,10 @@ mod tests {
         let pts: Vec<(f64, f64)> = (0..5).map(|i| (i as f64, (i as f64).sin())).collect();
         let curve = DataCurve::new(pts.clone()).unwrap();
         // Map data to visual space (identity for this test)
-        let visual: Vec<(f64, f64)> = pts.iter().map(|&(x, y)| (x * 100.0, 500.0 - y * 100.0)).collect();
+        let visual: Vec<(f64, f64)> = pts
+            .iter()
+            .map(|&(x, y)| (x * 100.0, 500.0 - y * 100.0))
+            .collect();
         let bez = curve.to_bezier_path(&visual);
         // 1 MoveTo + (n-1) CubicTo = n commands
         assert_eq!(bez.commands.len(), pts.len());

@@ -1,8 +1,8 @@
 // src/dataviz/confidence_band.rs
 
-use crate::{Color, EidosError};
-use crate::primitives::Bezier;
 use crate::dataviz::spline::catmull_rom_segment_to_bezier;
+use crate::primitives::Bezier;
+use crate::{Color, EidosError};
 
 /// A shaded region between upper and lower bound curves.
 ///
@@ -35,8 +35,8 @@ impl ConfidenceBand {
         Ok(ConfidenceBand {
             upper_points: upper,
             lower_points: lower,
-            fill_color: Color::rgb(100, 149, 237),  // cornflower blue default
-            opacity: 0.25,                           // 25% — semi-transparent per CONTEXT.md
+            fill_color: Color::rgb(100, 149, 237), // cornflower blue default
+            opacity: 0.25,                         // 25% — semi-transparent per CONTEXT.md
         })
     }
 
@@ -63,8 +63,14 @@ impl ConfidenceBand {
         visual_upper: &[(f64, f64)],
         visual_lower: &[(f64, f64)],
     ) -> Bezier {
-        assert!(visual_upper.len() >= 2, "to_bezier_path requires at least 2 upper points");
-        assert!(visual_lower.len() >= 2, "to_bezier_path requires at least 2 lower points");
+        assert!(
+            visual_upper.len() >= 2,
+            "to_bezier_path requires at least 2 upper points"
+        );
+        assert!(
+            visual_lower.len() >= 2,
+            "to_bezier_path requires at least 2 lower points"
+        );
 
         let n_upper = visual_upper.len();
         let lower_rev: Vec<(f64, f64)> = visual_lower.iter().rev().cloned().collect();
@@ -75,10 +81,18 @@ impl ConfidenceBand {
 
         // Forward upper curve using Catmull-Rom with phantom endpoint duplication
         for i in 0..(n_upper - 1) {
-            let p0 = if i == 0 { visual_upper[0] } else { visual_upper[i - 1] };
+            let p0 = if i == 0 {
+                visual_upper[0]
+            } else {
+                visual_upper[i - 1]
+            };
             let p1 = visual_upper[i];
             let p2 = visual_upper[i + 1];
-            let p3 = if i + 2 >= n_upper { visual_upper[n_upper - 1] } else { visual_upper[i + 2] };
+            let p3 = if i + 2 >= n_upper {
+                visual_upper[n_upper - 1]
+            } else {
+                visual_upper[i + 2]
+            };
 
             let (cp1, cp2, end) = catmull_rom_segment_to_bezier(p0, p1, p2, p3);
             bez = bez.cubic_to(cp1.0, cp1.1, cp2.0, cp2.1, end.0, end.1);
@@ -89,10 +103,18 @@ impl ConfidenceBand {
 
         // Reversed lower curve using Catmull-Rom with phantom endpoint duplication
         for i in 0..(n_lower - 1) {
-            let p0 = if i == 0 { lower_rev[0] } else { lower_rev[i - 1] };
+            let p0 = if i == 0 {
+                lower_rev[0]
+            } else {
+                lower_rev[i - 1]
+            };
             let p1 = lower_rev[i];
             let p2 = lower_rev[i + 1];
-            let p3 = if i + 2 >= n_lower { lower_rev[n_lower - 1] } else { lower_rev[i + 2] };
+            let p3 = if i + 2 >= n_lower {
+                lower_rev[n_lower - 1]
+            } else {
+                lower_rev[i + 2]
+            };
 
             let (cp1, cp2, end) = catmull_rom_segment_to_bezier(p0, p1, p2, p3);
             bez = bez.cubic_to(cp1.0, cp1.1, cp2.0, cp2.1, end.0, end.1);
@@ -102,8 +124,7 @@ impl ConfidenceBand {
         bez = bez.close();
 
         // Fill-only: no stroke on the band boundary lines
-        bez.fill(self.fill_color)
-           .opacity(self.opacity)
+        bez.fill(self.fill_color).opacity(self.opacity)
     }
 }
 
@@ -164,9 +185,10 @@ mod tests {
         let bez = band.to_bezier_path(&upper, &lower);
 
         // Verify the path has a Close command
-        let has_close = bez.commands.iter().any(|cmd| {
-            matches!(cmd, crate::primitives::bezier::PathCommand::Close)
-        });
+        let has_close = bez
+            .commands
+            .iter()
+            .any(|cmd| matches!(cmd, crate::primitives::bezier::PathCommand::Close));
         assert!(has_close, "path must be closed");
 
         // Verify fill is set (no stroke on the boundary)
@@ -174,9 +196,17 @@ mod tests {
         assert!(bez.stroke.is_none(), "band must be fill-only, no stroke");
 
         // Verify opacity is 0.25 (default)
-        assert!((bez.opacity - 0.25).abs() < 1e-10, "default opacity should be 0.25");
+        assert!(
+            (bez.opacity - 0.25).abs() < 1e-10,
+            "default opacity should be 0.25"
+        );
 
         // Verify command count: MoveTo + 1 CubicTo (upper) + LineTo + 1 CubicTo (lower) + Close = 5
-        assert_eq!(bez.commands.len(), 5, "expected 5 commands, got {}", bez.commands.len());
+        assert_eq!(
+            bez.commands.len(),
+            5,
+            "expected 5 commands, got {}",
+            bez.commands.len()
+        );
     }
 }
